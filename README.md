@@ -1,4 +1,4 @@
-# 🚗 Parking Space Occupancy Detection using OpenCV
+# 🚗 Smart Parking Space Occupancy Detection using OpenCV
 
 An interactive computer vision project that detects whether a selected parking space is **Occupied** or **Empty** using **OpenCV**, **NumPy**, **Canny Edge Detection**, and **Edge Density Analysis**.
 
@@ -78,7 +78,7 @@ Decision Rule:
 ### Clone the repository
 
 ```bash
-git clone https://github.com/your-username/Parking-Space-Occupancy-Detection.git
+git clone https://github.com/Fasee9831/Smart-Parking-Space-Detection-using-OpenCV.git
 cd Parking-Space-Occupancy-Detection
 ```
 
