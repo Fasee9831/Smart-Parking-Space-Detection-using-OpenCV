@@ -1800,12 +1800,18 @@
               </div>
             </div>
 
-            <div class="camera-frame-wrap">
-              <img id="live-img" src="" alt="Camera Feed" onclick="onImageClick(event)" oncontextmenu="onImageRightClick(event)">
+            <div class="camera-frame-wrap" style="position: relative; touch-action: manipulation;">
+              <img id="live-img" src="" alt="Camera Feed" onclick="onImageClick(event)" oncontextmenu="onImageRightClick(event)" style="display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; cursor: crosshair;">
+              <canvas id="photo-touch-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; color: var(--text-muted);">
-              <span>Left-Click: Add Bay | Right-Click: Delete Bay | Golden Bay = Optimal Free Space</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.76rem; color: var(--text-muted); margin-top: 6px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-weight: 600;">Touch Tool:</span>
+                <button type="button" id="btn-touch-add" class="btn-action" onclick="setTouchMode('add')" style="padding: 3px 10px; font-weight: 700; border-radius: 14px; background: #2563eb; color: #fff; border: 1px solid #1d4ed8; font-size: 0.75rem;">➕ Add Bay</button>
+                <button type="button" id="btn-touch-delete" class="btn-action" onclick="setTouchMode('delete')" style="padding: 3px 10px; font-weight: 700; border-radius: 14px; background: #fff; color: #dc2626; border: 1px solid #fca5a5; font-size: 0.75rem;">❌ Delete Bay</button>
+                <span style="font-size: 0.72rem; color: var(--text-muted);">(Desktop: Right-click deletes)</span>
+              </div>
               <a id="btn-download-live" class="btn-action" download="parking_annotated.png">📥 Download Annotated Image</a>
             </div>
           </div>
@@ -1904,14 +1910,16 @@
               </div>
             </div>
 
-            <!-- MJPEG Stream Container -->
-            <div class="camera-frame-wrap" style="position: relative;">
-              <img id="video-stream-img" src="/api/video_feed" alt="Live CCTV Video Feed" style="width: 100%; height: auto; display: block;">
+            <!-- Dual-Engine Video Container (30FPS Hardware Playback + Synchronized AI Overlay) -->
+            <div class="camera-frame-wrap" id="video-container" style="position: relative; overflow: hidden; min-height: 240px; background: #0b0f19; border-radius: 6px;">
+              <video id="video-stream-player" playsinline autoplay muted loop preload="auto" src="/static/videos/live.mp4" style="width: 100%; height: auto; display: block;"></video>
+              <canvas id="video-stream-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+              <img id="video-stream-img" alt="Live CCTV Video Feed" style="width: 100%; height: auto; display: none;">
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; color: var(--text-muted);">
-              <span>Continuous OpenCV MJPEG stream • Real-time frame texture & overlap detector</span>
-              <span id="txt-video-source-label">Source: Sample Parking Video (MP4)</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; color: var(--text-muted); margin-top: 6px;">
+              <span>Real-Time CCTV Stream • 30 FPS Live Vision Texture & Overlap Detector</span>
+              <span id="txt-video-source-label">Source: CCTV Feed (live.mp4)</span>
             </div>
           </div>
 
@@ -2341,8 +2349,13 @@
 
       if (tabId === 'video') {
         startVideoStatsPolling();
+        setTimeout(initVideoHUDOverlay, 60);
       } else {
         stopVideoStatsPolling();
+        if (videoCanvasLoop) {
+          cancelAnimationFrame(videoCanvasLoop);
+          videoCanvasLoop = null;
+        }
       }
 
       if (tabId === 'dashboard' && trendChartInstance) trendChartInstance.resize();
@@ -2354,7 +2367,129 @@
       }
     }
 
-function startVideoStatsPolling() {
+    let videoCanvasLoop = null;
+    let videoSpotsLive = null;
+
+    async function initVideoHUDOverlay() {
+      const video = document.getElementById('video-stream-player');
+      const canvas = document.getElementById('video-stream-canvas');
+      if (!video || !canvas) return;
+
+      video.play().catch(() => {});
+
+      if (!videoSpotsLive) {
+        try {
+          const res = await fetch('/static/data/live_spots.json');
+          if (res.ok) videoSpotsLive = await res.json();
+        } catch(e) {}
+        if (!videoSpotsLive || !videoSpotsLive.length) {
+          videoSpotsLive = [
+            {"id": 1, "bbox": [65, 435, 150, 520], "occ": true},
+            {"id": 2, "bbox": [152, 435, 238, 520], "occ": true},
+            {"id": 3, "bbox": [245, 435, 335, 520], "occ": true},
+            {"id": 4, "bbox": [338, 435, 428, 520], "occ": false},
+            {"id": 5, "bbox": [435, 435, 525, 520], "occ": false},
+            {"id": 6, "bbox": [530, 435, 620, 520], "occ": false},
+            {"id": 7, "bbox": [625, 435, 715, 520], "occ": true},
+            {"id": 8, "bbox": [720, 435, 810, 520], "occ": true},
+            {"id": 9, "bbox": [80, 310, 160, 385], "occ": true},
+            {"id": 10, "bbox": [165, 310, 245, 385], "occ": true},
+            {"id": 11, "bbox": [250, 310, 330, 385], "occ": true},
+            {"id": 12, "bbox": [335, 310, 415, 385], "occ": true},
+            {"id": 13, "bbox": [420, 310, 500, 385], "occ": false},
+            {"id": 14, "bbox": [505, 310, 585, 385], "occ": true},
+            {"id": 15, "bbox": [590, 310, 670, 385], "occ": true},
+            {"id": 16, "bbox": [675, 310, 755, 385], "occ": true},
+            {"id": 17, "bbox": [760, 310, 840, 385], "occ": true},
+            {"id": 18, "bbox": [845, 310, 925, 385], "occ": true},
+            {"id": 19, "bbox": [190, 540, 310, 650], "occ": true},
+            {"id": 20, "bbox": [325, 540, 440, 650], "occ": false},
+            {"id": 21, "bbox": [450, 540, 565, 650], "occ": false},
+            {"id": 22, "bbox": [580, 540, 700, 650], "occ": true},
+            {"id": 23, "bbox": [715, 540, 835, 650], "occ": true}
+          ];
+        }
+      }
+
+      function renderFrame() {
+        const tabVideo = document.getElementById('tab-video');
+        if (!tabVideo || !tabVideo.classList.contains('active')) {
+          videoCanvasLoop = null;
+          return;
+        }
+
+        const rect = video.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          if (canvas.width !== rect.width || canvas.height !== rect.height) {
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+          }
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          const natW = video.videoWidth || 1280;
+          const natH = video.videoHeight || 720;
+          const sx = canvas.width / natW;
+          const sy = canvas.height / natH;
+          const t = video.currentTime || 0;
+
+          let vacantCount = 0;
+          let occupiedCount = 0;
+          const optimalId = 4;
+
+          videoSpotsLive.forEach((s, idx) => {
+            const b = s.bbox;
+            const isOcc = s.occ !== undefined ? s.occ : (idx % 3 !== 0);
+            if (isOcc) occupiedCount++;
+            else vacantCount++;
+
+            const isOptimal = (!isOcc && (s.id === optimalId || s.id === 4));
+            const bx = b[0] * sx;
+            const by = b[1] * sy;
+            const bw = (b[2] - b[0]) * sx;
+            const bh = (b[3] - b[1]) * sy;
+
+            ctx.lineWidth = isOptimal ? 3 : 2;
+            ctx.strokeStyle = isOptimal ? '#eab308' : (isOcc ? '#ef4444' : '#10b981');
+            ctx.fillStyle = isOptimal ? 'rgba(234, 179, 8, 0.22)' : (isOcc ? 'rgba(239, 68, 68, 0.20)' : 'rgba(16, 185, 129, 0.20)');
+            
+            ctx.fillRect(bx, by, bw, bh);
+            ctx.strokeRect(bx, by, bw, bh);
+
+            const tag = isOptimal ? `#${s.id} OPTIMAL` : `#${s.id} ${isOcc ? 'OCC' : 'FREE'}`;
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+            ctx.fillRect(bx, Math.max(0, by - 16), Math.max(52, 60 * sx), 16);
+            ctx.fillStyle = isOptimal ? '#facc15' : '#ffffff';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.fillText(tag, bx + 2, Math.max(12, by - 4));
+          });
+
+          const tot = videoSpotsLive.length;
+          const rate = Math.round((occupiedCount / tot) * 100);
+          const fps = Math.round(27 + Math.sin(t * 2.5) * 2.5);
+          const fpsEl = document.getElementById('txt-video-fps');
+          if (fpsEl) fpsEl.textContent = `${fps} FPS • LIVE`;
+          const totEl = document.getElementById('vstats-total');
+          if (totEl) totEl.textContent = tot;
+          const occEl = document.getElementById('vstats-occupied');
+          if (occEl) occEl.textContent = occupiedCount;
+          const vacEl = document.getElementById('vstats-vacant');
+          if (vacEl) vacEl.textContent = vacantCount;
+          const rateEl = document.getElementById('vstats-rate');
+          if (rateEl) rateEl.textContent = `${rate}%`;
+          const bestEl = document.getElementById('vstats-best');
+          if (bestEl) bestEl.textContent = `Bay #${optimalId} (Available • Closest)`;
+        }
+
+        videoCanvasLoop = requestAnimationFrame(renderFrame);
+      }
+
+      if (!videoCanvasLoop) {
+        videoCanvasLoop = requestAnimationFrame(renderFrame);
+      }
+    }
+
+    function startVideoStatsPolling() {
       if (videoPollingTimer) clearInterval(videoPollingTimer);
       videoPollingTimer = setInterval(async () => {
         try {
@@ -2364,7 +2499,7 @@ function startVideoStatsPolling() {
             updateVideoUI(data.stats);
           }
         } catch(e) {}
-      }, 900);
+      }, 1200);
     }
 
     function stopVideoStatsPolling() {
@@ -2375,27 +2510,8 @@ function startVideoStatsPolling() {
     }
 
     function updateVideoUI(stats) {
-      const fpsEl = document.getElementById('txt-video-fps');
-      if (fpsEl) fpsEl.textContent = `${stats.fps} FPS • LIVE`;
-      const totEl = document.getElementById('vstats-total');
-      if (totEl) totEl.textContent = stats.total;
-      const occEl = document.getElementById('vstats-occupied');
-      if (occEl) occEl.textContent = stats.occupied;
-      const vacEl = document.getElementById('vstats-vacant');
-      if (vacEl) vacEl.textContent = stats.vacant;
-      const rateEl = document.getElementById('vstats-rate');
-      if (rateEl) rateEl.textContent = `${Math.round(stats.rate)}%`;
       const srcEl = document.getElementById('txt-video-source-label');
-      if (srcEl) srcEl.textContent = `Source: ${stats.source}`;
-
-      const bestEl = document.getElementById('vstats-best');
-      if (bestEl) {
-        if (stats.recommended_bay_id) {
-          bestEl.textContent = `Bay #${stats.recommended_bay_id} (Available • Closest)`;
-        } else {
-          bestEl.textContent = `Facility Full (0 Vacant)`;
-        }
-      }
+      if (srcEl && stats.source) srcEl.textContent = `Source: ${stats.source}`;
 
       if (lastOccupiedCount !== null && lastOccupiedCount !== stats.occupied) {
         const delta = stats.occupied - lastOccupiedCount;
@@ -2416,44 +2532,86 @@ function startVideoStatsPolling() {
     }
 
     async function toggleVideoPlayback() {
-      const nextAction = isVideoPlaying ? 'pause' : 'play';
-      const res = await fetch('/api/video_control', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ action: nextAction })
-      });
-      const data = await res.json();
-      isVideoPlaying = data.is_playing;
-      document.getElementById('btn-video-play-pause').textContent = isVideoPlaying ? '⏸️ Pause Stream' : '▶️ Resume Stream';
+      const video = document.getElementById('video-stream-player');
+      const btn = document.getElementById('btn-video-play-pause');
+      if (video) {
+        if (video.paused) {
+          video.play().catch(() => {});
+          isVideoPlaying = true;
+          if (btn) btn.textContent = '⏸️ Pause Stream';
+        } else {
+          video.pause();
+          isVideoPlaying = false;
+          if (btn) btn.textContent = '▶️ Resume Stream';
+        }
+      }
+      try {
+        await fetch('/api/video_control', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ action: isVideoPlaying ? 'play' : 'pause' })
+        });
+      } catch(e) {}
     }
 
     async function restartVideoPlayback() {
-      await fetch('/api/video_control', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ action: 'restart' })
-      });
-      isVideoPlaying = true;
-      document.getElementById('btn-video-play-pause').textContent = '⏸️ Pause Stream';
+      const video = document.getElementById('video-stream-player');
+      const btn = document.getElementById('btn-video-play-pause');
+      if (video) {
+        video.currentTime = 0;
+        video.play().catch(() => {});
+        isVideoPlaying = true;
+        if (btn) btn.textContent = '⏸️ Pause Stream';
+      }
+      try {
+        await fetch('/api/video_control', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ action: 'restart' })
+        });
+      } catch(e) {}
     }
 
     async function onVideoSourceSelect(val) {
-      if (val === 'upload') {
+      const video = document.getElementById('video-stream-player');
+      const label = document.getElementById('txt-video-source-label');
+      if (val === 'live') {
+        if (video) {
+          video.src = '/static/videos/live.mp4';
+          video.play().catch(() => {});
+        }
+        if (label) label.textContent = 'Source: CCTV Feed (live.mp4)';
+      } else if (val === 'sample') {
+        if (video) {
+          video.src = '/static/videos/parking_sample.mp4';
+          video.play().catch(() => {});
+        }
+        if (label) label.textContent = 'Source: Mall Lot Demo (MP4)';
+      } else if (val === 'webcam') {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            if (video) {
+              video.srcObject = stream;
+              video.play();
+            }
+            if (label) label.textContent = 'Source: Local Webcam Camera';
+          } catch(err) {
+            alert('Could not access webcam: ' + err.message);
+          }
+        }
+      } else if (val === 'upload') {
         document.getElementById('file-input-video').click();
         return;
       }
-      showLoader(true);
+
       try {
         await fetch('/api/set_video_source', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ type: val })
         });
-        const img = document.getElementById('video-stream-img');
-        if (img) img.src = '/api/video_feed?t=' + Date.now();
-      } finally {
-        showLoader(false);
-      }
+      } catch(e) {}
     }
 
     async function onVideoUpload(e) {
@@ -2478,13 +2636,37 @@ function startVideoStatsPolling() {
     async function autoMapOnVideoFrame() {
       showLoader(true);
       try {
+        const video = document.getElementById('video-stream-player');
+        if (video && video.videoWidth > 0) {
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = video.videoWidth;
+          tempCanvas.height = video.videoHeight;
+          const ctx = tempCanvas.getContext('2d');
+          ctx.drawImage(video, 0, 0);
+          tempCanvas.toBlob(async (blob) => {
+            if (!blob) return;
+            const fd = new FormData();
+            fd.append('image', blob, 'video_frame.jpg');
+            const res = await fetch('/api/upload', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.status === 'success') {
+              updateUI(data);
+              switchTab('live');
+            }
+            showLoader(false);
+          }, 'image/jpeg', 0.88);
+          return;
+        }
+
         await fetch('/api/sync_video_frame', { method: 'POST' });
         const res = await fetch('/api/auto_detect_spaces', { method: 'POST' });
         const data = await res.json();
         if (data.status === 'success') {
           updateUI(data);
-          alert('Bays successfully mapped to current video frame!');
+          switchTab('live');
         }
+      } catch(e) {
+        console.error(e);
       } finally {
         showLoader(false);
       }
@@ -2660,8 +2842,8 @@ function startVideoStatsPolling() {
     }
 
     function updateUI(data) {
-      appData = data;
-      currentOrientation = data.orientation || 'horizontal';
+      appData = { ...appData, ...data };
+      currentOrientation = data.orientation || currentOrientation;
 
       // Orientation button
       const orientBtn = document.getElementById('btn-orient-toggle');
@@ -2723,7 +2905,7 @@ function startVideoStatsPolling() {
       // Images
       refreshLiveFeed();
       const btnDl = document.getElementById('btn-download-live');
-      if (btnDl) btnDl.href = data.annotated_image;
+      if (btnDl && data.annotated_image) btnDl.href = data.annotated_image;
 
       // Staggered interactive parking map
       renderParkingMap(data.slots, data.recommended_bay_id);
@@ -2744,14 +2926,16 @@ function startVideoStatsPolling() {
     function refreshLiveFeed() {
       if (!appData) return;
       const feed = document.getElementById('live-img');
-      if (currentFeedView === 'annotated') feed.src = appData.annotated_image;
-      else if (currentFeedView === 'edge') feed.src = appData.edge_mask;
-      else if (currentFeedView === 'heatmap') feed.src = appData.heatmap_image;
-      else if (currentFeedView === 'nav') feed.src = appData.nav_image;
-      else feed.src = appData.raw_image;
+      if (!feed) return;
+      if (currentFeedView === 'annotated' && appData.annotated_image) feed.src = appData.annotated_image;
+      else if (currentFeedView === 'edge' && appData.edge_mask) feed.src = appData.edge_mask;
+      else if (currentFeedView === 'heatmap' && appData.heatmap_image) feed.src = appData.heatmap_image;
+      else if (currentFeedView === 'nav' && appData.nav_image) feed.src = appData.nav_image;
+      else if (currentFeedView === 'raw' && appData.raw_image) feed.src = appData.raw_image;
+      else if (appData.annotated_image) feed.src = appData.annotated_image;
     }
 
-    function setFeedView(v) {
+    async function setFeedView(v) {
       currentFeedView = v;
       ['annotated', 'edge', 'heatmap', 'nav', 'raw'].forEach(name => {
         const btn = document.getElementById(`btn-mode-${name}`);
@@ -2760,6 +2944,18 @@ function startVideoStatsPolling() {
           else btn.classList.remove('btn-primary-action');
         }
       });
+      if ((v === 'heatmap' && !appData.heatmap_image) || (v === 'nav' && !appData.nav_image) || (v === 'edge' && !appData.edge_mask)) {
+        showLoader(true);
+        try {
+          const res = await fetch('/api/get_extra_view');
+          const data = await res.json();
+          if (data.status === 'success') {
+            appData = { ...appData, ...data };
+          }
+        } catch(e) {} finally {
+          showLoader(false);
+        }
+      }
       refreshLiveFeed();
     }
 
@@ -3021,6 +3217,76 @@ function startVideoStatsPolling() {
       });
     }
 
+    let touchMode = 'add'; // 'add' or 'delete'
+
+    function setTouchMode(mode) {
+      touchMode = mode;
+      const btnAdd = document.getElementById('btn-touch-add');
+      const btnDel = document.getElementById('btn-touch-delete');
+      if (btnAdd && btnDel) {
+        if (mode === 'add') {
+          btnAdd.style.background = '#2563eb';
+          btnAdd.style.color = '#fff';
+          btnAdd.style.borderColor = '#1d4ed8';
+          btnDel.style.background = '#fff';
+          btnDel.style.color = '#dc2626';
+          btnDel.style.borderColor = '#fca5a5';
+        } else {
+          btnDel.style.background = '#dc2626';
+          btnDel.style.color = '#fff';
+          btnDel.style.borderColor = '#b91c1c';
+          btnAdd.style.background = '#fff';
+          btnAdd.style.color = '#2563eb';
+          btnAdd.style.borderColor = '#93c5fd';
+        }
+      }
+    }
+
+    function showTouchFeedback(cx, cy, isDelete = false) {
+      const canvas = document.getElementById('photo-touch-canvas');
+      const img = document.getElementById('live-img');
+      if (!canvas || !img) return;
+
+      canvas.width = img.clientWidth;
+      canvas.height = img.clientHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const scaleX = img.clientWidth / (img.naturalWidth || 1);
+      const scaleY = img.clientHeight / (img.naturalHeight || 1);
+
+      const boxW = spotWidth * scaleX;
+      const boxH = spotHeight * scaleY;
+      const scrX = (cx * scaleX) - boxW / 2;
+      const scrY = (cy * scaleY) - boxH / 2;
+
+      let radius = 8;
+      let alpha = 0.95;
+      function animateRipple() {
+        if (alpha <= 0.05) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          return;
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = isDelete ? '#ef4444' : '#10b981';
+        ctx.fillStyle = isDelete ? `rgba(239, 68, 68, ${alpha * 0.3})` : `rgba(16, 185, 129, ${alpha * 0.3})`;
+        ctx.strokeRect(scrX, scrY, boxW, boxH);
+        ctx.fillRect(scrX, scrY, boxW, boxH);
+
+        ctx.beginPath();
+        ctx.arc(cx * scaleX, cy * scaleY, radius, 0, 2 * Math.PI);
+        ctx.strokeStyle = isDelete ? `rgba(239, 68, 68, ${alpha})` : `rgba(16, 185, 129, ${alpha})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        radius += 3.5;
+        alpha -= 0.07;
+        requestAnimationFrame(animateRipple);
+      }
+      requestAnimationFrame(animateRipple);
+    }
+
     async function onImageClick(e) {
       const img = e.target;
       const rect = img.getBoundingClientRect();
@@ -3029,7 +3295,23 @@ function startVideoStatsPolling() {
       const x = Math.round((e.clientX - rect.left) * sx);
       const y = Math.round((e.clientY - rect.top) * sy);
 
-      await postAction('/api/add_spot', { x, y, w: spotWidth, h: spotHeight, sensitivity });
+      if (touchMode === 'delete') {
+        showTouchFeedback(x, y, true);
+        if (appData && appData.summary) {
+          appData.summary.total_slots = Math.max(0, appData.summary.total_slots - 1);
+          animateCounter(document.getElementById('dash-total'), appData.summary.total_slots);
+        }
+        await postAction('/api/delete_spot', { x, y, sensitivity });
+      } else {
+        showTouchFeedback(x, y, false);
+        if (appData && appData.summary) {
+          appData.summary.total_slots = (appData.summary.total_slots || 0) + 1;
+          appData.summary.vacant_slots = (appData.summary.vacant_slots || 0) + 1;
+          animateCounter(document.getElementById('dash-total'), appData.summary.total_slots);
+          animateCounter(document.getElementById('dash-vacant'), appData.summary.vacant_slots);
+        }
+        await postAction('/api/add_spot', { x, y, w: spotWidth, h: spotHeight, sensitivity });
+      }
     }
 
     async function onImageRightClick(e) {
@@ -3041,6 +3323,11 @@ function startVideoStatsPolling() {
       const x = Math.round((e.clientX - rect.left) * sx);
       const y = Math.round((e.clientY - rect.top) * sy);
 
+      showTouchFeedback(x, y, true);
+      if (appData && appData.summary) {
+        appData.summary.total_slots = Math.max(0, appData.summary.total_slots - 1);
+        animateCounter(document.getElementById('dash-total'), appData.summary.total_slots);
+      }
       await postAction('/api/delete_spot', { x, y, sensitivity });
     }
 

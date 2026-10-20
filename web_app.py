@@ -58,7 +58,13 @@ state = {
 
 
 # Video & Live CCTV Streaming State
-default_video_path = os.path.join(ROOT_DIR, "live.mp4") if os.path.exists(os.path.join(ROOT_DIR, "live.mp4")) else os.path.join(ROOT_DIR, "parking_sample.mp4")
+cand_video_paths = [
+    os.path.join(ROOT_DIR, "live.mp4"),
+    os.path.join(STATIC_DIR, "videos", "live.mp4"),
+    os.path.join(ROOT_DIR, "parking_sample.mp4"),
+    os.path.join(STATIC_DIR, "videos", "parking_sample.mp4"),
+]
+default_video_path = next((p for p in cand_video_paths if os.path.exists(p)), "")
 video_state = {
     "source_type": "live",  # 'live', 'sample', 'webcam', 'file'
     "source_path": default_video_path,
@@ -294,17 +300,29 @@ def compute_edges():
     state["edges"] = cv2.dilate(edges, kernel, iterations=1)
 
 
-def analyze_current_state() -> Dict[str, Any]:
+
+def analyze_current_state(fast: bool = False, include_extras: bool = True) -> Dict[str, Any]:
     """Runs high-accuracy universal occupancy and vehicle detection."""
+    ensure_default_image_loaded()
     img = state["image_raw"]
     if img is None:
         return {"status": "error", "message": "No image loaded"}
 
-    # 1. Run DL vehicle detection (cached for ultra-fast instant UI responsiveness)
+    # 1. Fast vehicle detection loading (use pre-saved cache to eliminate 15-second CPU stall)
     view_type = UniversalParkingEngine.detect_view_type(img)
     if state["detected_vehicles"] is None:
-        if view_type != "aerial":
-            state["detected_vehicles"] = UniversalParkingEngine.detect_vehicles_dl(img)
+        base, _ = os.path.splitext(state.get("image_name", ""))
+        cache_paths = [
+            os.path.join(ROOT_DIR, "data", f"{base}_vehicles.json"),
+            os.path.join(ROOT_DIR, f"{base}_vehicles.json")
+        ]
+        found_cache = next((cp for cp in cache_paths if os.path.exists(cp)), None)
+        if found_cache:
+            try:
+                with open(found_cache, "r", encoding="utf-8") as f:
+                    state["detected_vehicles"] = json.load(f)
+            except Exception:
+                state["detected_vehicles"] = []
         else:
             state["detected_vehicles"] = []
 
@@ -442,15 +460,18 @@ def analyze_current_state() -> Dict[str, Any]:
         (tw, _), _ = cv2.getTextSize(txt, cv2.FONT_HERSHEY_SIMPLEX, 0.44, 1)
         cv2.putText(canvas, txt, (cx - tw // 2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.44, col, 1, cv2.LINE_AA)
 
-    edge_bgr = cv2.cvtColor(state["edges"], cv2.COLOR_GRAY2BGR)
+    edge_bgr = cv2.cvtColor(state["edges"], cv2.COLOR_GRAY2BGR) if state.get("edges") is not None else None
     state["latest_results"] = slot_details
 
-    # 5. Advanced Vision Renderings: Heatmap & Turn-by-Turn Navigation
-    heatmap_canvas = UniversalParkingEngine.generate_occupancy_heatmap(img, slot_details)
-    nav_canvas = canvas.copy()
-    rec_slot = next((s for s in slot_details if s["id"] == recommended_id), None)
-    if rec_slot:
-        nav_canvas = UniversalParkingEngine.draw_navigation_route(nav_canvas, rec_slot["bbox"])
+    # 5. Advanced Vision Renderings: Heatmap & Turn-by-Turn Navigation (computed only when extras requested)
+    heatmap_canvas = None
+    nav_canvas = None
+    if include_extras:
+        heatmap_canvas = UniversalParkingEngine.generate_occupancy_heatmap(img, slot_details)
+        nav_canvas = canvas.copy()
+        rec_slot = next((s for s in slot_details if s["id"] == recommended_id), None)
+        if rec_slot:
+            nav_canvas = UniversalParkingEngine.draw_navigation_route(nav_canvas, rec_slot["bbox"])
 
     # Billing & Duration Calculations
     total_rev = round(sum(d["fee"] for d in slot_details if d["is_occupied"]), 2)
@@ -513,7 +534,7 @@ def analyze_current_state() -> Dict[str, Any]:
             "confidence": f"{s.get('confidence', 92)}%"
         })
 
-    return {
+    payload = {
         "status": "success",
         "image_name": state["image_name"],
         "spot_w": state["spot_w"],
@@ -536,12 +557,19 @@ def analyze_current_state() -> Dict[str, Any]:
         "zones": zone_stats,
         "recent_detections": recent_detections,
         "slots": slot_details,
-        "annotated_image": cv2_to_base64_url(canvas),
-        "raw_image": cv2_to_base64_url(img),
-        "edge_mask": cv2_to_base64_url(edge_bgr),
-        "heatmap_image": cv2_to_base64_url(heatmap_canvas),
-        "nav_image": cv2_to_base64_url(nav_canvas)
+        "annotated_image": cv2_to_base64_url(canvas, quality=75 if fast else 85)
     }
+
+    if include_extras:
+        payload["raw_image"] = cv2_to_base64_url(img, quality=80)
+        if edge_bgr is not None:
+            payload["edge_mask"] = cv2_to_base64_url(edge_bgr, quality=75)
+        if heatmap_canvas is not None:
+            payload["heatmap_image"] = cv2_to_base64_url(heatmap_canvas, quality=75)
+        if nav_canvas is not None:
+            payload["nav_image"] = cv2_to_base64_url(nav_canvas, quality=75)
+
+    return payload
 
 
 def load_slots_for_image():
@@ -587,6 +615,24 @@ def load_slots_for_image():
     print(f"[*] No pre-saved configuration. Auto-detecting parking spaces for {state['image_name']}...")
     state["spots"] = UniversalParkingEngine.auto_detect_parking_spaces(state["image_raw"])
     print(f"[+] Auto-detected {len(state['spots'])} parking spaces!")
+
+
+def ensure_default_image_loaded():
+    """Ensures default image is loaded immediately so any endpoint is ready."""
+    if state["image_raw"] is None:
+        p = os.path.join(ROOT_DIR, "parking_lot.png")
+        if os.path.exists(p):
+            state["image_raw"] = cv2.imread(p)
+            state["image_name"] = "parking_lot.png"
+            state["h"], state["w"] = state["image_raw"].shape[:2]
+            state["spot_w"] = 94
+            state["spot_h"] = 62
+            state["orientation"] = "horizontal"
+            compute_edges()
+            load_slots_for_image()
+
+
+ensure_default_image_loaded()
 
 
 # --- Routes ---
@@ -702,7 +748,7 @@ def reanalyze():
     data = request.get_json(silent=True) or {}
     if "sensitivity" in data:
         state["sensitivity_pct"] = int(data["sensitivity"])
-    return jsonify(analyze_current_state())
+    return jsonify(analyze_current_state(fast=True, include_extras=False))
 
 
 @app.route("/api/add_spot", methods=["POST"])
@@ -720,7 +766,7 @@ def add_spot():
 
     new_id = len(state["spots"]) + 1
     state["spots"].append({"id": new_id, "bbox": [x1, y1, x2, y2]})
-    return jsonify(analyze_current_state())
+    return jsonify(analyze_current_state(fast=True, include_extras=False))
 
 
 @app.route("/api/delete_spot", methods=["POST"])
@@ -733,7 +779,7 @@ def delete_spot():
         b = s["bbox"]
         if b[0] <= x <= b[2] and b[1] <= y <= b[3]:
             state["spots"].remove(s)
-            return jsonify(analyze_current_state())
+            return jsonify(analyze_current_state(fast=True, include_extras=False))
 
     if state["spots"]:
         nearest = min(state["spots"], key=lambda s: np.hypot((s["bbox"][0]+s["bbox"][2])//2 - x, (s["bbox"][1]+s["bbox"][3])//2 - y))
@@ -741,7 +787,7 @@ def delete_spot():
         if np.hypot((b[0]+b[2])//2 - x, (b[1]+b[3])//2 - y) < 80:
             state["spots"].remove(nearest)
 
-    return jsonify(analyze_current_state())
+    return jsonify(analyze_current_state(fast=True, include_extras=False))
 
 
 @app.route("/api/auto_grid", methods=["POST"])
@@ -764,13 +810,18 @@ def auto_grid():
             state["spots"].append({"id": count, "bbox": [x1, y1, x2, y2]})
             count += 1
 
-    return jsonify(analyze_current_state())
+    return jsonify(analyze_current_state(fast=True, include_extras=False))
 
 
 @app.route("/api/clear_spots", methods=["POST"])
 def clear_spots():
     state["spots"] = []
-    return jsonify(analyze_current_state())
+    return jsonify(analyze_current_state(fast=True, include_extras=False))
+
+
+@app.route("/api/get_extra_view", methods=["GET"])
+def get_extra_view():
+    return jsonify(analyze_current_state(fast=False, include_extras=True))
 
 
 @app.route("/api/reload_spots", methods=["POST"])
@@ -928,16 +979,34 @@ def export_csv():
 
 @app.route("/api/video_feed")
 def video_feed():
-    """Continuous MJPEG Live Video & Webcam detection stream."""
+    """Continuous MJPEG Live Video & Webcam detection stream with safe streaming limits."""
     def generate():
-        while True:
+        t0 = time.time()
+        while time.time() - t0 < 15.0:
             with video_state["lock"]:
                 frame_bytes = video_state["latest_jpeg"]
             if frame_bytes is not None:
                 yield (b"--frame\r\n"
                        b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
-            time.sleep(0.033)
+            time.sleep(0.04)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+
+@app.route("/api/video_frame")
+def video_frame():
+    """Returns single latest annotated video frame for snapshot/polling fallback."""
+    with video_state["lock"]:
+        frame_bytes = video_state["latest_jpeg"]
+    if frame_bytes is None and default_video_path and os.path.exists(default_video_path):
+        cap = cv2.VideoCapture(default_video_path)
+        ret, frame = cap.read()
+        cap.release()
+        if ret:
+            ret, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+            frame_bytes = buf.tobytes()
+    if frame_bytes:
+        return Response(frame_bytes, mimetype="image/jpeg")
+    return Response(b"", status=404)
 
 
 @app.route("/api/video_status", methods=["GET"])
