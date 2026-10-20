@@ -7,3 +7,7 @@ cloudflared.exe
 live_url.txt
 cf_tunnel.py
 tunnel_daemon.py
+
+wait_cf_login.py
+cf_login_url.txt
+.vercel

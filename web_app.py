@@ -13,7 +13,7 @@ import time
 from typing import List, Dict, Any, Tuple
 import cv2
 import numpy as np
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify, Response, send_from_directory
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 if ROOT_DIR not in sys.path:
@@ -22,7 +22,20 @@ if ROOT_DIR not in sys.path:
 from core.simulation_3d import get_3d_simulation_state
 from core.universal_engine import UniversalParkingEngine
 
-app = Flask(__name__, template_folder=os.path.join(ROOT_DIR, "templates"))
+STATIC_DIR = os.path.join(ROOT_DIR, "static")
+TEMPLATES_DIR = os.path.join(ROOT_DIR, "templates")
+
+app = Flask(
+    __name__,
+    template_folder=TEMPLATES_DIR,
+    static_folder=STATIC_DIR,
+    static_url_path="/static"
+)
+
+@app.route("/static/<path:filename>")
+def serve_static(filename):
+    return send_from_directory(STATIC_DIR, filename)
+
 
 # Global State
 state = {
