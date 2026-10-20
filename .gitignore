@@ -3,3 +3,7 @@ __pycache__/
 .env
 .venv/
 *.log
+cloudflared.exe
+live_url.txt
+cf_tunnel.py
+tunnel_daemon.py
