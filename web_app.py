@@ -1017,7 +1017,7 @@ def api_simulation_3d():
 
 
 if __name__ == "__main__":
-    port = 5000
+    port = int(os.environ.get("PORT", 5000))
     print(f"\n=======================================================")
     print(f"   [P] Smart Vacantrix - Universal Vision Server         ")
     print(f"   Access in browser: http://localhost:{port}          ")
