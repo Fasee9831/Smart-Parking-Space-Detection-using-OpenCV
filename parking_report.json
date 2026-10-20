@@ -1,0 +1,300 @@
+{
+  "source": "parking_lot.png",
+  "summary": {
+    "total_slots": 24,
+    "occupied_slots": 21,
+    "vacant_slots": 3,
+    "occupancy_rate": 87.5,
+    "by_type": {
+      "Regular": {
+        "total": 18,
+        "occupied": 16,
+        "vacant": 2
+      },
+      "EV Charging": {
+        "total": 2,
+        "occupied": 2,
+        "vacant": 0
+      },
+      "Handicap": {
+        "total": 2,
+        "occupied": 2,
+        "vacant": 0
+      },
+      "VIP / Reserved": {
+        "total": 2,
+        "occupied": 1,
+        "vacant": 1
+      }
+    },
+    "revenue": 0.0,
+    "turnover_sessions": 0,
+    "active_violations": 0
+  },
+  "slots": [
+    {
+      "Slot ID": "A-01",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "96%",
+      "Edge Density": "37%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "A-02",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "92%",
+      "Edge Density": "32%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "A-03",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "89%",
+      "Edge Density": "18%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "A-04",
+      "Type": "EV Charging",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "79%",
+      "Edge Density": "15%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "A-05",
+      "Type": "Handicap",
+      "Status": "Occupied",
+      "Vehicle": "truck",
+      "Confidence": "53%",
+      "Edge Density": "20%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "A-06",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "70%",
+      "Edge Density": "23%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "A-07",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "70%",
+      "Edge Density": "15%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "B-01",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "63%",
+      "Edge Density": "40%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "B-02",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "96%",
+      "Edge Density": "56%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "B-03",
+      "Type": "EV Charging",
+      "Status": "Occupied",
+      "Vehicle": "vehicle",
+      "Confidence": "95%",
+      "Edge Density": "15%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "B-04",
+      "Type": "Regular",
+      "Status": "Vacant",
+      "Vehicle": "-",
+      "Confidence": "0%",
+      "Edge Density": "9%",
+      "Duration": "-",
+      "Accrued Fee": "-",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "B-05",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "94%",
+      "Edge Density": "34%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "B-06",
+      "Type": "VIP / Reserved",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "73%",
+      "Edge Density": "32%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "B-07",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "89%",
+      "Edge Density": "52%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "B-08",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "92%",
+      "Edge Density": "34%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "B-09",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "94%",
+      "Edge Density": "20%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "C-01",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "54%",
+      "Edge Density": "53%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "C-02",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "vehicle",
+      "Confidence": "95%",
+      "Edge Density": "59%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "C-03",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "car",
+      "Confidence": "74%",
+      "Edge Density": "58%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "C-04",
+      "Type": "Handicap",
+      "Status": "Occupied",
+      "Vehicle": "vehicle",
+      "Confidence": "95%",
+      "Edge Density": "60%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "C-05",
+      "Type": "Regular",
+      "Status": "Vacant",
+      "Vehicle": "-",
+      "Confidence": "56%",
+      "Edge Density": "3%",
+      "Duration": "-",
+      "Accrued Fee": "-",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "C-06",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "vehicle",
+      "Confidence": "95%",
+      "Edge Density": "53%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "C-07",
+      "Type": "Regular",
+      "Status": "Occupied",
+      "Vehicle": "vehicle",
+      "Confidence": "95%",
+      "Edge Density": "21%",
+      "Duration": "0m 0s",
+      "Accrued Fee": "$0.00",
+      "Violations": "None"
+    },
+    {
+      "Slot ID": "C-08",
+      "Type": "VIP / Reserved",
+      "Status": "Vacant",
+      "Vehicle": "-",
+      "Confidence": "0%",
+      "Edge Density": "10%",
+      "Duration": "-",
+      "Accrued Fee": "-",
+      "Violations": "None"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+[
+  {"id": "A-01", "type": "Regular", "bbox": [23, 669, 117, 731]},
+  {"id": "A-02", "type": "Regular", "bbox": [173, 674, 267, 736]},
+  {"id": "A-03", "type": "Regular", "bbox": [383, 679, 477, 741]},
+  {"id": "A-04", "type": "EV Charging", "bbox": [583, 674, 677, 736]},
+  {"id": "A-05", "type": "Handicap", "bbox": [793, 679, 887, 741]},
+  {"id": "A-06", "type": "Regular", "bbox": [998, 684, 1092, 746]},
+  {"id": "A-07", "type": "Regular", "bbox": [1201, 684, 1295, 746]},
+
+  {"id": "B-01", "type": "Regular", "bbox": [5, 469, 99, 531]},
+  {"id": "B-02", "type": "Regular", "bbox": [93, 474, 187, 536]},
+  {"id": "B-03", "type": "EV Charging", "bbox": [208, 509, 302, 571]},
+  {"id": "B-04", "type": "Regular", "bbox": [368, 514, 462, 576]},
+  {"id": "B-05", "type": "Regular", "bbox": [453, 409, 547, 471]},
+  {"id": "B-06", "type": "VIP / Reserved", "bbox": [628, 449, 722, 511]},
+  {"id": "B-07", "type": "Regular", "bbox": [753, 469, 847, 531]},
+  {"id": "B-08", "type": "Regular", "bbox": [958, 489, 1052, 551]},
+  {"id": "B-09", "type": "Regular", "bbox": [1213, 489, 1307, 551]},
+
+  {"id": "C-01", "type": "Regular", "bbox": [83, 349, 177, 411]},
+  {"id": "C-02", "type": "Regular", "bbox": [198, 349, 292, 411]},
+  {"id": "C-03", "type": "Regular", "bbox": [328, 349, 422, 411]},
+  {"id": "C-04", "type": "Handicap", "bbox": [433, 349, 527, 411]},
+  {"id": "C-05", "type": "Regular", "bbox": [603, 319, 697, 381]},
+  {"id": "C-06", "type": "Regular", "bbox": [803, 349, 897, 411]},
+  {"id": "C-07", "type": "Regular", "bbox": [1113, 349, 1207, 411]},
+  {"id": "C-08", "type": "VIP / Reserved", "bbox": [1273, 349, 1367, 411]}
+]

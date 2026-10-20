@@ -1,0 +1,3160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/png" href="/static/favicon.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Vacantrix • Parking Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="/static/js/parking_simulation_3d.js"></script>
+
+  <style>
+    :root {
+      --sidebar-bg: #0f172a;
+      --sidebar-hover: #1e293b;
+      --sidebar-active: #1e293b;
+      --sidebar-text: #94a3b8;
+      --sidebar-active-text: #38bdf8;
+      
+      --body-bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      --text-dark: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      
+      --accent-blue: #2563eb;
+      --accent-blue-subtle: #eff6ff;
+      --accent-cyan: #0284c7;
+      --accent-green: #059669;
+      --accent-green-subtle: #ecfdf5;
+      --accent-red: #e11d48;
+      --accent-red-subtle: #fff1f2;
+      --accent-purple: #7c3aed;
+      --accent-purple-subtle: #f5f3ff;
+      --accent-amber: #d97706;
+      --accent-amber-subtle: #fffbeb;
+      
+      --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+      
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+      background-color: var(--body-bg);
+      color: var(--text-dark);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+
+    ::selection {
+      background: transparent;
+      color: inherit;
+    }
+    ::-moz-selection {
+      background: transparent;
+      color: inherit;
+    }
+
+    code, .selectable, td code {
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    /* Left Sidebar */
+    .sidebar {
+      width: 256px;
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      border-right: 1px solid rgba(255, 255, 255, 0.07);
+      z-index: 40;
+    }
+
+    .sidebar-brand {
+      padding: 1.4rem 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .brand-icon-box {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+    .brand-title-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-main-title {
+      font-size: 0.98rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: #f8fafc;
+    }
+    .brand-sub-title {
+      font-size: 0.68rem;
+      color: #38bdf8;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 1.2rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--sidebar-text);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      position: relative;
+    }
+    .nav-item:hover {
+      background: var(--sidebar-hover);
+      color: #f1f5f9;
+    }
+    .nav-item.active {
+      background: #1e293b;
+      color: #ffffff;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: -8px;
+      top: 6px;
+      bottom: 6px;
+      width: 3px;
+      background: #38bdf8;
+      border-radius: 0 3px 3px 0;
+    }
+    .nav-icon {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+      padding: 1.1rem 1.3rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      font-size: 0.74rem;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+
+    /* Main Content Area */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      max-height: 100vh;
+    }
+
+    /* Top Header Bar */
+    .top-header {
+      background: #ffffff;
+      height: 60px;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      box-shadow: var(--shadow-xs);
+    }
+    .header-left {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .page-heading {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      letter-spacing: -0.3px;
+    }
+    .page-subheading {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Buttons */
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 13px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+      background: #ffffff;
+      color: var(--text-dark);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      line-height: 1.2;
+    }
+    .btn-action:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .btn-action:active {
+      transform: translateY(1px);
+    }
+    .btn-primary-action {
+      background: var(--accent-blue);
+      color: #ffffff;
+      border-color: var(--accent-blue);
+    }
+    .btn-primary-action:hover {
+      background: #1d4ed8;
+      border-color: #1d4ed8;
+      color: #ffffff;
+    }
+    .btn-auto-action {
+      background: #0284c7;
+      color: #ffffff;
+      border-color: #0284c7;
+    }
+    .btn-auto-action:hover {
+      background: #0369a1;
+      border-color: #0369a1;
+      color: #ffffff;
+    }
+
+    /* Content Area */
+    .content-area {
+      padding: 1.6rem 2rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.4rem;
+    }
+
+    .tab-content {
+      display: none;
+      flex-direction: column;
+      gap: 1.4rem;
+    }
+    .tab-content.active {
+      display: flex;
+    }
+
+    /* Recommendation Beacon Banner */
+    .recommendation-banner {
+      background: #fffbeb;
+      border: 1px solid #fef3c7;
+      border-left: 4px solid #f59e0b;
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #92400e;
+      font-size: 0.86rem;
+      box-shadow: var(--shadow-xs);
+    }
+    .recommendation-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+    }
+
+    /* KPI Cards Grid */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1.1rem;
+    }
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      box-shadow: var(--shadow-xs);
+      transition: all 0.15s ease;
+    }
+    .kpi-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: #cbd5e1;
+    }
+    .kpi-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .kpi-title {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .kpi-value {
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+      margin-top: 2px;
+    }
+    .kpi-caption {
+      font-size: 0.72rem;
+      color: var(--text-light);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+    .kpi-icon-pill {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .icon-green { background: var(--accent-green-subtle); color: var(--accent-green); }
+    .icon-blue { background: var(--accent-blue-subtle); color: var(--accent-blue); }
+    .icon-purple { background: var(--accent-purple-subtle); color: var(--accent-purple); }
+    .icon-gold { background: var(--accent-amber-subtle); color: var(--accent-amber); }
+    .icon-cyan { background: #f0fdfa; color: #0d9488; }
+
+    /* Middle Row Grid */
+    .dashboard-mid-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 1.2rem;
+    }
+    .panel-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: var(--shadow-xs);
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      letter-spacing: -0.2px;
+    }
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 4px;
+    }
+
+    /* Parking Map Mini Grid */
+    .parking-map-container {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 240px;
+      justify-content: center;
+      overflow-y: auto;
+      max-height: 280px;
+    }
+    .map-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .map-slot {
+      width: 32px;
+      height: 44px;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: white;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: var(--shadow-xs);
+    }
+    .map-slot:hover {
+      transform: translateY(-2px) scale(1.08);
+      z-index: 10;
+      box-shadow: var(--shadow-md);
+    }
+    .slot-occ { background: #e11d48; }
+    .slot-vac { background: #059669; }
+    .slot-rec {
+      background: #d97706;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 2px #d97706;
+    }
+
+    /* Recent Detections Table */
+    .table-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.3rem;
+      box-shadow: var(--shadow-xs);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+    th {
+      text-align: left;
+      padding: 9px 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: #fafafa;
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f1f5f9;
+      color: var(--text-dark);
+      vertical-align: middle;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    tr:hover td {
+      background: #f8fafc;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .badge-occ { background: #fee2e2; color: #991b1b; }
+    .badge-vac { background: #d1fae5; color: #065f46; }
+
+    /* Live Detection View */
+    .live-detection-panel {
+      display: grid;
+      grid-template-columns: 1fr 310px;
+      gap: 1.3rem;
+    }
+    .camera-stage {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: var(--shadow-xs);
+    }
+    .camera-frame-wrap {
+      background: #090d16;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid #1e293b;
+      position: relative;
+    }
+    .camera-frame-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+      cursor: crosshair;
+    }
+
+    .upload-box {
+      background: #ffffff;
+      border: 2px dashed #cbd5e1;
+      border-radius: var(--radius-md);
+      padding: 2.2rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .upload-box:hover {
+      border-color: var(--accent-blue);
+      background: #f8fafc;
+    }
+
+    .controls-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.15rem;
+      box-shadow: var(--shadow-xs);
+      height: fit-content;
+    }
+    .control-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+    input[type=range] {
+      width: 100%;
+      accent-color: var(--accent-blue);
+      height: 5px;
+      border-radius: 3px;
+      background: #e2e8f0;
+      cursor: pointer;
+    }
+
+    /* Modal / Action Loader */
+    .loader-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.88rem;
+    }
+    .loader-card {
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-lg);
+    }
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 2.5px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 1280px) {
+      .kpi-row { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 1024px) {
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .dashboard-mid-grid { grid-template-columns: 1fr; }
+      .live-detection-panel { grid-template-columns: 1fr; }
+    }
+/* CREATIVE HOVER MICRO-INTERACTIONS & SPOTLIGHT */
+    /* ========================================================= */
+    .kpi-card {
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+      cursor: default;
+    }
+    .kpi-card:hover {
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: 0 12px 24px -4px rgba(15, 23, 42, 0.12), 0 4px 8px -2px rgba(15, 23, 42, 0.06);
+      border-color: #cbd5e1;
+    }
+    .kpi-card:hover .kpi-value {
+      transform: scale(1.04);
+      transform-origin: left center;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .kpi-card:hover .kpi-icon-pill {
+      transform: scale(1.18) rotate(6deg);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Buttons Shimmer & Tactile Hover */
+    .btn-action {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-action::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+      transition: left 0.45s ease;
+    }
+    .btn-action:hover::after {
+      left: 140%;
+    }
+    .btn-action:hover {
+      transform: translateY(-1.5px);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
+    }
+    .btn-action:active {
+      transform: translateY(0.5px) scale(0.98);
+    }
+
+    /* Recommendation Banner Interactive Hover */
+    .recommendation-banner {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .recommendation-banner:hover {
+      transform: translateY(-1.5px);
+      box-shadow: 0 6px 16px rgba(245, 158, 11, 0.15);
+      border-color: #fcd34d;
+    }
+
+    /* Table Row Interactive Accent on Hover */
+    tbody tr {
+      transition: all 0.16s ease;
+      cursor: pointer;
+    }
+    tbody tr:hover td {
+      background: #f1f5f9;
+    }
+    tbody tr:hover td:first-child {
+      border-left: 3px solid var(--accent-blue);
+      padding-left: 9px;
+    }
+
+    /* Camera Frame Hover HUD Effect */
+    .camera-frame-wrap {
+      cursor: crosshair;
+      transition: box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+    .camera-frame-wrap:hover {
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+      border-color: #3b82f6;
+    }
+
+    /* Map Slot Micro-Hover Tooltip & 3D Lift */
+    .map-slot {
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease !important;
+    }
+    .map-slot:hover {
+      transform: translateY(-5px) scale(1.18) !important;
+      z-index: 60;
+    }
+    .map-slot.slot-vac:hover {
+      box-shadow: 0 8px 18px rgba(5, 150, 105, 0.5), 0 0 0 2px #ffffff !important;
+    }
+    .map-slot.slot-occ:hover {
+      box-shadow: 0 8px 18px rgba(225, 29, 72, 0.5), 0 0 0 2px #ffffff !important;
+    }
+    .map-slot.slot-rec:hover {
+      box-shadow: 0 8px 20px rgba(217, 119, 6, 0.6), 0 0 0 2px #ffffff !important;
+    }
+
+    /* Stall Pulse Animation when Table Row is Hovered */
+    .map-slot.row-highlight {
+      transform: translateY(-6px) scale(1.24) !important;
+      box-shadow: 0 0 0 3px #ffffff, 0 10px 20px rgba(37, 99, 235, 0.6) !important;
+      z-index: 70;
+    }
+
+    /* Floating Slot Micro-Tooltip */
+    #slot-hover-tooltip {
+      position: fixed;
+      z-index: 100000;
+      background: #090d16;
+      color: #f8fafc;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.55);
+      pointer-events: none;
+      transform: translate(-50%, -100%);
+      margin-top: -10px;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #slot-hover-tooltip.visible {
+      opacity: 1;
+    }
+
+    /* END-TO-END INTERACTIVE ANIMATIONS & TRANSITIONS */
+    /* ========================================================= */
+    @keyframes tabFadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .tab-content.active {
+      display: flex;
+      animation: tabFadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes cardEntrance {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .kpi-card {
+      animation: cardEntrance 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+    .kpi-card:nth-child(1) { animation-delay: 0.04s; }
+    .kpi-card:nth-child(2) { animation-delay: 0.08s; }
+    .kpi-card:nth-child(3) { animation-delay: 0.12s; }
+    .kpi-card:nth-child(4) { animation-delay: 0.16s; }
+    .kpi-card:nth-child(5) { animation-delay: 0.20s; }
+
+    .kpi-icon-pill {
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+    }
+    .kpi-card:hover .kpi-icon-pill {
+      transform: scale(1.14) rotate(4deg);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .nav-item {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .nav-item:hover .nav-icon {
+      transform: scale(1.15) translateX(2px);
+    }
+    .nav-icon {
+      transition: transform 0.2s ease;
+    }
+
+    @keyframes slotPop {
+      from {
+        opacity: 0;
+        transform: scale(0.7) translateY(4px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes beaconPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.6), inset 0 0 0 1px #ffffff;
+      }
+      70% {
+        box-shadow: 0 0 0 7px rgba(217, 119, 6, 0), inset 0 0 0 1px #ffffff;
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(217, 119, 6, 0), inset 0 0 0 1px #ffffff;
+      }
+    }
+    .slot-rec {
+      animation: beaconPulse 1.8s infinite ease-in-out !important;
+    }
+
+    /* Typewriter Cursor */
+    .type-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: #92400e;
+      margin-left: 2px;
+      vertical-align: middle;
+      animation: blink 0.8s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Executive Floating Toast Container */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 99999;
+      pointer-events: none;
+    }
+    .toast-msg {
+      background: #0f172a;
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: auto;
+      animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .toast-msg.hide {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* APPLE-INSPIRED 3D PERSPECTIVE SHOWCASE PRELOADER */
+    /* ========================================================= */
+    .app-preloader {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(1200px circle at 60% 40%, #0d1322 0%, #030509 75%, #000000 100%);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 40px;
+      overflow: hidden;
+    }
+    .app-preloader.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .apple-stage {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1060px;
+      width: 100%;
+      gap: 56px;
+      position: relative;
+      z-index: 2;
+    }
+    @media (max-width: 900px) {
+      .apple-stage {
+        flex-direction: column-reverse;
+        gap: 36px;
+        text-align: center;
+      }
+      .apple-left {
+        align-items: center;
+        text-align: center;
+      }
+      .apple-hero-sub {
+        margin-left: auto;
+        margin-right: auto;
+      }
+    }
+    .apple-left {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      flex: 1;
+      max-width: 440px;
+    }
+    .apple-eyebrow {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: #86868b;
+      letter-spacing: -0.01em;
+      margin-bottom: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .apple-eyebrow-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #2997ff;
+      box-shadow: 0 0 10px #2997ff;
+    }
+    .apple-hero-title {
+      font-size: 3.25rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: #f5f5f7;
+      line-height: 1.05;
+      margin: 0;
+    }
+    .apple-hero-title span {
+      background: linear-gradient(135deg, #2997ff 0%, #68b8ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .apple-hero-sub {
+      font-size: 1.05rem;
+      font-weight: 400;
+      color: #86868b;
+      line-height: 1.5;
+      margin-top: 14px;
+      margin-bottom: 38px;
+    }
+    .apple-loader-box {
+      width: 100%;
+      max-width: 280px;
+    }
+    .apple-hairline-track {
+      width: 100%;
+      height: 2px;
+      background: #27272a;
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .apple-hairline-fill {
+      height: 100%;
+      width: 0%;
+      background: #2997ff;
+      border-radius: 999px;
+      transition: width 0.04s linear;
+      box-shadow: 0 0 8px rgba(41, 151, 255, 0.6);
+    }
+    .apple-loader-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: #6e6e73;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+    .apple-loader-pct {
+      font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif;
+      font-variant-numeric: tabular-nums;
+      color: #a1a1a6;
+      font-weight: 600;
+    }
+
+    /* Right 3D Perspective Stage */
+    .apple-3d-stage {
+      flex: 1.25;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      perspective: 1200px;
+      position: relative;
+    }
+    .apple-floor-shadow {
+      position: absolute;
+      bottom: -40px;
+      left: 10%;
+      width: 80%;
+      height: 60px;
+      background: radial-gradient(ellipse at center, rgba(41, 151, 255, 0.22) 0%, rgba(0, 0, 0, 0.7) 50%, transparent 75%);
+      filter: blur(24px);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .apple-3d-display {
+      width: 500px;
+      height: 295px;
+      border-radius: 18px;
+      background: #141415;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 
+        -25px 35px 80px -10px rgba(0, 0, 0, 0.95),
+        -10px 15px 30px rgba(0, 0, 0, 0.7),
+        0 0 0 1px rgba(255, 255, 255, 0.08);
+      transform: rotateY(-15deg) rotateX(8deg) rotateZ(-1deg);
+      transform-style: preserve-3d;
+      position: relative;
+      overflow: hidden;
+      animation: floatPerspective 4.5s ease-in-out infinite alternate;
+    }
+    @keyframes floatPerspective {
+      0% {
+        transform: rotateY(-15deg) rotateX(8deg) rotateZ(-1deg) translateY(0px);
+      }
+      100% {
+        transform: rotateY(-12deg) rotateX(10deg) rotateZ(0.5deg) translateY(-8px);
+      }
+    }
+    @media (max-width: 600px) {
+      .apple-3d-display {
+        width: 100%;
+        max-width: 380px;
+        height: 220px;
+        transform: rotateY(0deg) rotateX(0deg);
+        animation: none;
+      }
+    }
+    .apple-screen-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: saturate(1.1) brightness(0.95);
+    }
+    .apple-glass-reflection {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 38%, transparent 60%);
+      pointer-events: none;
+    }
+    .apple-3d-hud-pill {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #f5f5f7;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5);
+    }
+    .apple-live-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 6px #10b981;
+    }
+
+    /* Refined Action Loader */
+    .loader-card {
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 22px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+      color: #f8fafc;
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(56, 189, 248, 0.2);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+    }
+
+    .loader-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 26, 46, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 1200px) {
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .dashboard-mid-grid { grid-template-columns: 1fr; }
+      .live-detection-panel { grid-template-columns: 1fr; }
+    }
+  
+    
+
+
+    /* General Settings Styling */
+    .settings-form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .settings-form-group label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+    .settings-form-group .form-hint {
+      font-size: 0.73rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+    .settings-control-input, .settings-control-select {
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 0.84rem;
+      font-family: inherit;
+      color: var(--text-dark);
+      background: #ffffff;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .settings-control-input:focus, .settings-control-select:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .settings-checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: #fafafa;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .settings-checkbox-row:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    .settings-checkbox-row input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      margin-top: 2px;
+      accent-color: var(--accent-blue);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+
+    /* ========================================================= */
+    /* MOBILE & TABLET RESPONSIVE SYSTEM                         */
+    /* ========================================================= */
+    .mobile-menu-btn {
+      display: none;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      width: 36px;
+      height: 36px;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-dark);
+      cursor: pointer;
+      box-shadow: var(--shadow-xs);
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+    .mobile-menu-btn:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    .mobile-close-btn {
+      display: none;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+    .mobile-close-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+    }
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 998;
+      opacity: 0;
+      transition: opacity 0.28s ease;
+      pointer-events: none;
+    }
+    .sidebar-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    @media (max-width: 900px) {
+      .mobile-menu-btn {
+        display: inline-flex;
+      }
+      .mobile-close-btn {
+        display: inline-flex;
+      }
+      .sidebar-backdrop {
+        display: block;
+      }
+      body {
+        display: block;
+        width: 100%;
+        overflow-x: hidden;
+      }
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 275px;
+        height: 100vh;
+        height: 100dvh;
+        z-index: 999;
+        transform: translateX(-100%);
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: none;
+      }
+      .sidebar.mobile-open {
+        transform: translateX(0);
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.65);
+      }
+      .main-wrapper {
+        width: 100%;
+        min-width: 100%;
+      }
+      .top-header {
+        position: sticky;
+        top: 0;
+        z-index: 80;
+        padding: 0.75rem 1rem;
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+      .header-top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+      }
+      .header-actions {
+        display: flex;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+        gap: 6px;
+        width: 100%;
+      }
+      .header-actions::-webkit-scrollbar {
+        display: none;
+      }
+      .header-actions .btn-action {
+        flex-shrink: 0;
+        white-space: nowrap;
+        padding: 6px 11px;
+        font-size: 0.76rem;
+      }
+      .content-area {
+        padding: 1rem 0.85rem;
+      }
+      .kpi-row {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px;
+      }
+      .dashboard-mid-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem;
+      }
+      .live-detection-panel {
+        grid-template-columns: 1fr !important;
+        gap: 1rem;
+      }
+      .panel-card {
+        padding: 1rem;
+      }
+      .recommendation-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .recommendation-banner button {
+        width: 100%;
+        justify-content: center;
+      }
+      #simulation-3d-canvas-wrap {
+        height: 320px !important;
+      }
+    }
+
+    @media (max-width: 580px) {
+      .page-heading {
+        font-size: 1.15rem;
+      }
+      .page-subheading {
+        display: none;
+      }
+      .kpi-row {
+        grid-template-columns: 1fr !important;
+        gap: 8px;
+      }
+      .kpi-card {
+        padding: 0.85rem 1rem;
+      }
+      .kpi-value {
+        font-size: 1.45rem;
+      }
+      .map-slot {
+        width: 27px;
+        height: 38px;
+        font-size: 0.62rem;
+      }
+      .table-container {
+        padding: 0.85rem;
+      }
+      th, td {
+        padding: 8px 9px;
+        font-size: 0.76rem;
+      }
+      .apple-hero-title {
+        font-size: 2.15rem !important;
+      }
+      .apple-hero-sub {
+        font-size: 0.92rem !important;
+        margin-bottom: 24px !important;
+      }
+      .apple-3d-display {
+        width: 100% !important;
+        max-width: 310px !important;
+        height: 180px !important;
+      }
+      .settings-card {
+        padding: 1rem;
+      }
+      #tab-settings div[style*="grid-template-columns: 1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+</style>
+</head>
+<body>
+
+  <!-- Left Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 1.25rem 1.3rem;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <img src="/static/logo_icon.png" alt="Smart Vacantrix Icon" style="width: 38px; height: 38px; object-fit: contain; filter: drop-shadow(0 4px 10px rgba(37, 99, 235, 0.4)); flex-shrink: 0;">
+        <div class="brand-title-wrap">
+          <span class="brand-main-title" style="font-size: 1rem; font-weight: 700; color: #f8fafc; letter-spacing: -0.2px;">Smart Vacantrix</span>
+          <span class="brand-sub-title" style="font-size: 0.68rem; color: #10b981; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase;">Facility Suite</span>
+        </div>
+      </div>
+      <button class="mobile-close-btn" onclick="toggleMobileSidebar(false)" aria-label="Close Navigation">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <ul class="nav-list">
+      <li>
+        <a class="nav-item active" id="nav-dashboard" onclick="switchTab('dashboard')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>
+            </svg>
+          </span>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-item" id="nav-live" onclick="switchTab('live')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </span>
+          <span>Photo Detection</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-item" id="nav-video" onclick="switchTab('video')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="23 7 16 12 23 17 23 7"/>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>
+          </span>
+          <span>Live CCTV Stream</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-item" id="nav-zones" onclick="switchTab('zones')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+              <polyline points="2 17 12 22 22 17"/>
+              <polyline points="2 12 12 17 22 12"/>
+            </svg>
+          </span>
+          <span>Parking Zones</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-item" id="nav-analytics" onclick="switchTab('analytics')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </span>
+          <span>Analytics</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-item" id="nav-settings" onclick="switchTab('settings')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </span>
+          <span>Settings</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="live-dot"></span>
+        <span id="footer-status" style="font-weight: 500;">CCTV Stream Active</span>
+      </div>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #475569;">30 FPS</span>
+    </div>
+  </aside>
+<!-- Main Content Wrapper -->
+  <div class="main-wrapper">
+
+    <!-- Top Header -->
+    <header class="top-header">
+      <div class="header-top-row">
+        <div class="header-left" style="display: flex; align-items: center; gap: 10px;">
+          <!-- Mobile Hamburger Toggle -->
+          <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Open Navigation">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <img src="/static/logo_icon.png" alt="Smart Vacantrix Header Icon" style="width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.1)); flex-shrink: 0;">
+          <div style="display: flex; align-items: baseline; gap: 8px;">
+            <h1 class="page-heading" id="current-tab-title">Dashboard</h1>
+            <span class="page-subheading">• Lot A Monitoring</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <!-- Sample Presets Segmented Group -->
+        <div style="display: inline-flex; border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden; background: #ffffff;">
+          <button class="btn-action" style="border: none; border-radius: 0; padding: 6px 11px; font-size: 0.78rem;" onclick="loadSamplePreset('perspective')">
+            Mall Lot
+          </button>
+          <button class="btn-action" style="border: none; border-left: 1px solid var(--border-color); border-radius: 0; padding: 6px 11px; font-size: 0.78rem;" onclick="loadSamplePreset('aerial')">
+            Drone View
+          </button>
+        </div>
+
+        <button class="btn-action btn-auto-action" onclick="autoDetectSpaces()">
+          ⚡ Auto-Detect
+        </button>
+
+        <button class="btn-action btn-primary-action" onclick="switchTab('video')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Live Stream
+        </button>
+
+        <a href="/api/print_report" target="_blank" class="btn-action" style="font-size: 0.78rem;" title="Download PDF Report">
+          Export PDF
+        </a>
+
+        <button class="btn-action" onclick="document.getElementById('file-input-header').click()" title="Analyze Photo">
+          Upload
+        </button>
+        <input type="file" id="file-input-header" style="display: none;" accept="image/*" onchange="onFileChange(event)">
+      </div>
+    </header>
+<!-- Content Workspace -->
+    <main class="content-area">
+
+      <!-- ============================================== -->
+      <!-- TAB 1: DASHBOARD (Matching Reference Laptop) -->
+      <!-- ============================================== -->
+      <section class="tab-content active" id="tab-dashboard">
+
+        <!-- Smart Navigation Alert -->
+        <div class="recommendation-banner">
+          <div class="recommendation-title">
+            <span>🏆</span>
+            <span id="txt-recommended">Optimal Parking Space: #10 (Vacant • Closest to Entrance)</span>
+          </div>
+          <button class="btn-action" style="font-size: 0.78rem; padding: 4px 10px;" onclick="switchTab('live')">
+            Inspect on Camera Feed →
+          </button>
+        </div>
+
+        <!-- 5 KPI Cards -->
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span class="kpi-title">Total Spaces</span>
+              <span class="kpi-value" id="dash-total">24</span>
+              <span class="kpi-caption">Calibrated Lot Stalls</span>
+            </div>
+            <div class="kpi-icon-pill icon-blue">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="4"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="21" x2="9" y2="9"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span class="kpi-title">Occupied</span>
+              <span class="kpi-value" id="dash-occupied" style="color: var(--accent-red);">19</span>
+              <span class="kpi-caption">Vehicles Parked</span>
+            </div>
+            <div class="kpi-icon-pill icon-green" style="background: #fff1f2; color: #e11d48;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
+                <circle cx="7" cy="17" r="2"/>
+                <path d="M9 17h6"/>
+                <circle cx="17" cy="17" r="2"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span class="kpi-title">Vacant</span>
+              <span class="kpi-value" id="dash-vacant" style="color: var(--accent-green);">5</span>
+              <span class="kpi-caption">Available Now</span>
+            </div>
+            <div class="kpi-icon-pill icon-green">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="4"/>
+                <path d="M10 16V8h3.5a2.5 2.5 0 0 1 0 5H10"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span class="kpi-title">Occupancy Rate</span>
+              <span class="kpi-value" id="dash-rate" style="color: var(--accent-blue);">79.2%</span>
+              <span class="kpi-caption">Facility Utilization</span>
+            </div>
+            <div class="kpi-icon-pill icon-purple">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+                <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span class="kpi-title">Revenue & Avg Time</span>
+              <span class="kpi-value" id="dash-revenue" style="color: #059669;">$47.50</span>
+              <span class="kpi-caption" id="dash-overstay">Avg Duration: 45m</span>
+            </div>
+            <div class="kpi-icon-pill icon-gold">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                <line x1="1" y1="10" x2="23" y2="10"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+<!-- Middle Grid (Trend Line Chart + Visual Parking Map) -->
+        <div class="dashboard-mid-grid">
+          
+          <!-- Parking Occupancy Trend -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h2 class="panel-title">Parking Occupancy Trend</h2>
+              <div class="legend-row">
+                <span><span class="legend-dot" style="background: var(--accent-blue);"></span> Occupied</span>
+                <span><span class="legend-dot" style="background: var(--accent-cyan);"></span> Vacant</span>
+              </div>
+            </div>
+            <div style="height: 240px; position: relative;">
+              <canvas id="trendChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Parking Map (Visual Slot Matrix) -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h2 class="panel-title">Parking Map</h2>
+              <div class="legend-row">
+                <span><span class="legend-dot" style="background: var(--accent-red);"></span> Occupied</span>
+                <span><span class="legend-dot" style="background: var(--accent-green);"></span> Vacant</span>
+                <span><span class="legend-dot" style="background: var(--accent-gold);"></span> Optimal</span>
+              </div>
+            </div>
+            <div class="parking-map-container" id="parking-map-grid">
+              <!-- Dynamically populated mini bays -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Recent Detections Table -->
+        <div class="table-container">
+          <div class="panel-header" style="margin-bottom: 1rem;">
+            <h2 class="panel-title">Recent Detections & Vehicle Recognition</h2>
+            <a href="/api/export_csv" class="btn-action" style="padding: 5px 12px; font-size: 0.78rem;">Export CSV</a>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Bay ID</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Vehicle & Color</th>
+                <th>Duration</th>
+                <th>Fee</th>
+                <th>Confidence</th>
+                <th>License Plate</th>
+                <th>Parking Lot</th>
+              </tr>
+            </thead>
+            <tbody id="recent-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+<section class="tab-content" id="tab-live">
+
+        <!-- Upload banner -->
+        <div class="upload-box" onclick="document.getElementById('file-input-live').click()">
+          <span style="font-size: 1.8rem; display: block; margin-bottom: 6px;">📷</span>
+          <b>Click or Drop any Parking Lot Image to Analyze</b>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Supports CCTV, Aerial Drone, Ground Perspective (PNG, JPG, WEBP)</div>
+          <input type="file" id="file-input-live" style="display: none;" accept="image/*" onchange="onFileChange(event)">
+        </div>
+
+        <!-- Live Camera & Controls Grid -->
+        <div class="live-detection-panel">
+
+          <!-- Left: Feed Canvas -->
+          <div class="camera-stage">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn-action btn-primary-action" id="btn-mode-annotated" onclick="setFeedView('annotated')">Annotated View</button>
+                <button class="btn-action" id="btn-mode-heatmap" onclick="setFeedView('heatmap')">🔥 Heatmap</button>
+                <button class="btn-action" id="btn-mode-nav" onclick="setFeedView('nav')">📍 Navigation Route</button>
+                <button class="btn-action" id="btn-mode-edge" onclick="setFeedView('edge')">Edge Mask</button>
+                <button class="btn-action" id="btn-mode-raw" onclick="setFeedView('raw')">Raw Camera</button>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn-action btn-auto-action" onclick="autoDetectSpaces()" style="font-size: 0.78rem; padding: 5px 10px;">
+                  ⚡ Auto-Map Bays
+                </button>
+                <button class="btn-action" id="btn-orient-toggle" onclick="toggleOrientation()" style="font-size: 0.78rem; padding: 5px 10px;">
+                  🔄 Vertical Bays
+                </button>
+              </div>
+            </div>
+
+            <div class="camera-frame-wrap">
+              <img id="live-img" src="" alt="Camera Feed" onclick="onImageClick(event)" oncontextmenu="onImageRightClick(event)">
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; color: var(--text-muted);">
+              <span>Left-Click: Add Bay | Right-Click: Delete Bay | Golden Bay = Optimal Free Space</span>
+              <a id="btn-download-live" class="btn-action" download="parking_annotated.png">📥 Download Annotated Image</a>
+            </div>
+          </div>
+
+          <!-- Right: Controls -->
+          <div class="controls-card">
+            <h3 style="font-size: 0.92rem; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+              Detection Settings
+            </h3>
+
+            <div class="control-item">
+              <div class="control-header">
+                <span>Sensitivity (Threshold)</span>
+                <span id="txt-sensitivity" style="color: var(--accent-blue);">8%</span>
+              </div>
+              <input type="range" id="slider-sensitivity" min="2" max="30" value="8" oninput="onSensitivityChange(this.value)">
+            </div>
+
+            <div class="control-item">
+              <div class="control-header">
+                <span>Bay Width</span>
+                <span id="txt-width">94 px</span>
+              </div>
+              <input type="range" id="slider-width" min="15" max="250" value="94" oninput="onWidthChange(this.value)">
+            </div>
+
+            <div class="control-item">
+              <div class="control-header">
+                <span>Bay Height</span>
+                <span id="txt-height">62 px</span>
+              </div>
+              <input type="range" id="slider-height" min="15" max="180" value="62" oninput="onHeightChange(this.value)">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+              <button class="btn-action" onclick="autoGenerateGrid()" style="justify-content: center;">⚡ Add Grid Row</button>
+              <button class="btn-action" onclick="reloadSavedSpots()" style="justify-content: center;">🔄 Reset to Preset</button>
+              <button class="btn-action" onclick="clearAllSpots()" style="justify-content: center; color: var(--accent-red);">🧹 Clear All Bays</button>
+              <button class="btn-action btn-primary-action" onclick="saveSpots()" style="justify-content: center; margin-top: 4px;">💾 Save Layout</button>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+<section class="tab-content" id="tab-video">
+
+        <!-- Header / Source Selector -->
+        <div class="panel-card" style="margin-bottom: 1.2rem; padding: 1rem 1.4rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 1.6rem;">🎥</span>
+              <div>
+                <b style="font-size: 1rem;">Real-Time CCTV Video Stream & Webcam Detection</b>
+                <div style="font-size: 0.78rem; color: var(--text-muted);">Frame-by-frame live parking bay occupancy analysis at 25-30 FPS</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <select id="video-source-select" class="btn-action" onchange="onVideoSourceSelect(this.value)" style="font-weight: 600; padding: 6px 12px;">
+                <option value="live" selected>📹 CCTV Feed (live.mp4)</option>
+                <option value="sample">🎬 Mall Lot Demo (MP4)</option>
+                <option value="webcam">📹 Live Webcam (Camera 0)</option>
+                <option value="upload">📁 Upload Custom Video File</option>
+              </select>
+              <button class="btn-action btn-primary-action" onclick="document.getElementById('file-input-video').click()">
+                📤 Upload Video (.mp4, .avi)
+              </button>
+              <input type="file" id="file-input-video" style="display: none;" accept="video/*" onchange="onVideoUpload(event)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Video Stage Grid -->
+        <div class="live-detection-panel">
+
+          <!-- Left: Video Canvas & Controls -->
+          <div class="camera-stage">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="btn-action btn-primary-action" id="btn-video-play-pause" onclick="toggleVideoPlayback()">
+                  ⏸️ Pause Stream
+                </button>
+                <button class="btn-action" onclick="restartVideoPlayback()">
+                  🔄 Restart
+                </button>
+                <button class="btn-action btn-auto-action" onclick="autoMapOnVideoFrame()" style="font-size: 0.78rem;">
+                  ⚡ Auto-Map Bays on Frame
+                </button>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="live-dot" style="background: #ef4444;"></span>
+                <span id="txt-video-fps" style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; font-weight: 700; color: #10b981;">
+                  28.5 FPS • LIVE
+                </span>
+              </div>
+            </div>
+
+            <!-- MJPEG Stream Container -->
+            <div class="camera-frame-wrap" style="position: relative;">
+              <img id="video-stream-img" src="/api/video_feed" alt="Live CCTV Video Feed" style="width: 100%; height: auto; display: block;">
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; color: var(--text-muted);">
+              <span>Continuous OpenCV MJPEG stream • Real-time frame texture & overlap detector</span>
+              <span id="txt-video-source-label">Source: Sample Parking Video (MP4)</span>
+            </div>
+          </div>
+
+          <!-- Right: Real-time Video Stream Stats Card -->
+          <div class="controls-card">
+            <h3 style="font-size: 0.92rem; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+              Live Stream Metrics
+            </h3>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">TOTAL BAYS</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-dark);" id="vstats-total">24</div>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">OCCUPIED</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: #dc2626;" id="vstats-occupied">19</div>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">VACANT</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: #16a34a;" id="vstats-vacant">5</div>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">OCCUPANCY</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent-blue);" id="vstats-rate">79%</div>
+              </div>
+            </div>
+
+            <!-- Optimal Free Bay Banner -->
+            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px; margin-top: 6px;">
+              <div style="font-size: 0.72rem; font-weight: 700; color: #b45309; text-transform: uppercase;">
+                🎯 Real-Time Optimal Bay
+              </div>
+              <div style="font-size: 0.96rem; font-weight: 700; color: #92400e; margin-top: 2px;" id="vstats-best">
+                Bay #10 (Available • 38m to Gate)
+              </div>
+            </div>
+
+            <!-- Live Event Activity Feed -->
+            <div style="margin-top: 8px;">
+              <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 6px;">
+                Live Activity Log
+              </h4>
+              <div id="vstats-log" style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; font-size: 0.76rem; font-family: 'JetBrains Mono', monospace; display: flex; flex-direction: column; gap: 4px; max-height: 140px; overflow-y: auto;">
+                <div>[LIVE] Monitoring video feed...</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+<section class="tab-content" id="tab-zones">
+        <div class="kpi-row" id="zones-kpi-row">
+          <!-- Populated dynamically with Zone A, B, C, D cards -->
+        </div>
+
+        <div class="table-container">
+          <h2 class="panel-title" style="margin-bottom: 1rem;">Zone Occupancy Matrix</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Zone Name</th>
+                <th>Total Capacity</th>
+                <th>Occupied</th>
+                <th>Vacant</th>
+                <th>Occupancy Rate</th>
+              </tr>
+            </thead>
+            <tbody id="zones-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+<section class="tab-content" id="tab-analytics">
+
+        <!-- 3D Digital Twin Parking Simulation Map Card -->
+        <div class="panel-card" style="padding: 1.25rem;">
+          <div class="panel-header" style="flex-wrap: wrap; gap: 12px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 32px; height: 32px; border-radius: 8px; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: #2563eb;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="panel-title" style="margin: 0;">3D Interactive Simulation Map • Digital Twin</h2>
+                <div style="font-size: 0.76rem; color: var(--text-muted);">Real-time WebGL spatial twin mapped directly from live.mp4 video stream</div>
+              </div>
+            </div>
+
+            <!-- 3D Viewport Controls & Camera Angle Presets -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <button class="btn-action" onclick="setSimCameraPreset('isometric')" title="Isometric Perspective">
+                📐 Isometric 3D
+              </button>
+              <button class="btn-action" onclick="setSimCameraPreset('topdown')" title="Top-Down Birds-Eye">
+                🎯 Top-Down View
+              </button>
+              <button class="btn-action" onclick="setSimCameraPreset('driver')" title="Driver Street-Level">
+                🚗 Driver Gate View
+              </button>
+              <button class="btn-action" id="btn-3d-night" onclick="toggleSimNightMode()" title="Toggle Lighting">
+                🌙 Night Mode
+              </button>
+              <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 999px; font-size: 0.72rem; color: #065f46; font-weight: 600;">
+                <span class="live-dot" style="width: 6px; height: 6px;"></span>
+                Live Telemetry Synced
+              </span>
+            </div>
+          </div>
+
+          <!-- WebGL 3D Canvas Mounting Viewport -->
+          <div style="position: relative; width: 100%; height: 460px; border-radius: 12px; overflow: hidden; background: #0a0f1d; border: 1px solid #1e293b;">
+            <div id="simulation-3d-canvas-wrap" style="width: 100%; height: 100%;"></div>
+            
+            <!-- Floating Hover Card in 3D Space -->
+            <div id="sim-3d-hover-card" style="display: none; position: absolute; z-index: 20; background: rgba(15, 23, 42, 0.92); color: #ffffff; padding: 7px 12px; border-radius: 8px; font-size: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.15); pointer-events: none; backdrop-filter: blur(8px); box-shadow: 0 10px 25px rgba(0,0,0,0.5);"></div>
+
+            <!-- Legend Overlay -->
+            <div style="position: absolute; bottom: 12px; left: 14px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 14px; font-size: 0.72rem; color: #e2e8f0; font-weight: 500;">
+              <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span> Vacant Bay</span>
+              <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #e11d48;"></span> Occupied (3D Car)</span>
+              <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span> Optimal Free Bay</span>
+              <span style="color: #94a3b8; font-size: 0.68rem;">• Drag to orbit | Scroll to zoom</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 Analytics Charts below 3D Map -->
+        <div class="dashboard-mid-grid">
+          
+          <div class="panel-card">
+            <h2 class="panel-title">Occupancy Rate by Zone</h2>
+            <div style="height: 240px; position: relative;">
+              <canvas id="zoneBarChart"></canvas>
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <h2 class="panel-title">Space Distribution</h2>
+            <div style="height: 240px; position: relative; display: flex; align-items: center; justify-content: center;">
+              <canvas id="donutChart"></canvas>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- TAB 5: SETTINGS -->
+      <!-- ============================================== -->
+      <section class="tab-content" id="tab-settings">
+        <div style="max-width: 820px; display: flex; flex-direction: column; gap: 1.25rem;">
+
+          <!-- Section 1: Facility Information -->
+          <div class="panel-card">
+            <h2 class="panel-title" style="display: flex; align-items: center; gap: 8px; font-size: 0.96rem;">
+              <span>🏢</span> Parking Facility Details
+            </h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="settings-form-group">
+                <label for="cfg-lot-name">Parking Lot Name</label>
+                <input type="text" id="cfg-lot-name" class="settings-control-input" value="Smart Vacantrix • Lot A Main">
+                <span class="form-hint">Displayed on screen headers and exported parking receipts.</span>
+              </div>
+              <div class="settings-form-group">
+                <label for="cfg-op-hours">Operating Schedule</label>
+                <select id="cfg-op-hours" class="settings-control-select">
+                  <option value="24/7" selected>24 Hours (Open All Day & Night)</option>
+                  <option value="standard">Daytime (06:00 AM – 10:00 PM)</option>
+                  <option value="custom">Business Hours (08:00 AM – 06:00 PM)</option>
+                </select>
+                <span class="form-hint">Daily operating time for the parking facility.</span>
+              </div>
+              <div class="settings-form-group">
+                <label for="cfg-rate">Hourly Parking Fee ($)</label>
+                <input type="number" step="0.5" id="cfg-rate" class="settings-control-input" value="3.50">
+                <span class="form-hint">Standard rate charged per hour.</span>
+              </div>
+              <div class="settings-form-group">
+                <label for="cfg-grace">Free Grace Period</label>
+                <select id="cfg-grace" class="settings-control-select">
+                  <option value="15" selected>15 Minutes Free</option>
+                  <option value="30">30 Minutes Free</option>
+                  <option value="0">No Free Time</option>
+                </select>
+                <span class="form-hint">Time allowed before hourly billing begins.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Camera & Detection Settings -->
+          <div class="panel-card">
+            <h2 class="panel-title" style="display: flex; align-items: center; gap: 8px; font-size: 0.96rem;">
+              <span>📹</span> Camera & Video Feed Settings
+            </h2>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="settings-form-group">
+                <label for="cfg-camera-source">Primary Camera Feed</label>
+                <select id="cfg-camera-source" class="settings-control-select" onchange="syncVideoSource(this.value)">
+                  <option value="live" selected>📹 CCTV Video Stream (live.mp4)</option>
+                  <option value="sample">🎬 Mall Parking Demo Stream</option>
+                  <option value="webcam">📹 USB Web Camera (Camera 0)</option>
+                </select>
+                <span class="form-hint">Choose which camera feed is monitored for available parking spaces.</span>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 4px;">
+                <label class="settings-checkbox-row">
+                  <input type="checkbox" id="cfg-night-mode" checked>
+                  <div>
+                    <b style="font-size: 0.84rem;">Night / Dark Lighting Boost</b>
+                    <div class="form-hint">Automatically enhances visibility during evening or shadows.</div>
+                  </div>
+                </label>
+                <label class="settings-checkbox-row">
+                  <input type="checkbox" id="cfg-auto-reconnect" checked>
+                  <div>
+                    <b style="font-size: 0.84rem;">Auto-Reconnect Camera</b>
+                    <div class="form-hint">Restores live video automatically if camera disconnects.</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Alerts & Driver Guidance -->
+          <div class="panel-card">
+            <h2 class="panel-title" style="display: flex; align-items: center; gap: 8px; font-size: 0.96rem;">
+              <span>🔔</span> Occupancy Alerts & Driver Guidance
+            </h2>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <label class="settings-checkbox-row">
+                <input type="checkbox" id="cfg-alert-full" checked>
+                <div>
+                  <b style="font-size: 0.84rem;">Parking Lot Nearly Full Alert</b>
+                  <div class="form-hint">Shows a warning banner when more than 85% of spaces are taken.</div>
+                </div>
+              </label>
+
+              <label class="settings-checkbox-row">
+                <input type="checkbox" id="cfg-guide-nearest" checked>
+                <div>
+                  <b style="font-size: 0.84rem;">Recommend Best Space to Incoming Drivers</b>
+                  <div class="form-hint">Automatically suggests the vacant spot closest to the mall entrance (#10).</div>
+                </div>
+              </label>
+
+              <label class="settings-checkbox-row">
+                <input type="checkbox" id="cfg-sign-sync" checked>
+                <div>
+                  <b style="font-size: 0.84rem;">Entrance Roadside LED Board Sync</b>
+                  <div class="form-hint">Transmits real-time vacant spot numbers to physical entrance displays.</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Section 4: Reports, Data & Save -->
+          <div class="panel-card">
+            <h2 class="panel-title" style="display: flex; align-items: center; gap: 8px; font-size: 0.96rem;">
+              <span>💾</span> Export Records & Save Settings
+            </h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="/api/export_csv" class="btn-action btn-primary-action" style="font-size: 0.82rem; padding: 7px 14px;">
+                  📥 Download Parking Log (CSV)
+                </a>
+                <a href="/api/print_report" target="_blank" class="btn-action" style="font-size: 0.82rem; padding: 7px 14px;">
+                  📄 View PDF Shift Report
+                </a>
+                <button class="btn-action" onclick="saveSpots()" style="font-size: 0.82rem; padding: 7px 14px;">
+                  💾 Save Parking Spots
+                </button>
+              </div>
+
+              <button class="btn-action btn-primary-action" onclick="saveGeneralSettings()" style="font-size: 0.88rem; font-weight: 700; padding: 9px 22px;">
+                💾 Save Settings
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Apple-Inspired 3D Perspective Showcase Preloader -->
+  <div class="app-preloader" id="app-preloader">
+    <div class="apple-stage">
+      
+      <!-- Left: Apple Editorial Typography & Minimal Hairline Loader -->
+      <div class="apple-left">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+          <img src="/static/logo_icon.png" alt="Smart Vacantrix Icon" style="width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(37, 99, 235, 0.4));">
+          <span class="apple-eyebrow" style="margin-bottom: 0;">Smart Parking System</span>
+        </div>
+        <h1 class="apple-hero-title">Smart <span>Vacantrix.</span></h1>
+        <p class="apple-hero-sub">
+          Easily check available parking spots and find your space in real time.
+        </p>
+
+        <div class="apple-loader-box">
+          <div class="apple-hairline-track">
+            <div class="apple-hairline-fill" id="preloader-bar"></div>
+          </div>
+          <div class="apple-loader-meta">
+            <span id="preloader-status">Loading parking spots...</span>
+            <span class="apple-loader-pct" id="preloader-pct">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Floating 3D Device Showcase with Perspective Tilt -->
+      <div class="apple-3d-stage">
+        <div class="apple-floor-shadow"></div>
+        <div class="apple-3d-display">
+          <img class="apple-screen-img" src="/static/preloader_preview.jpg" alt="Smart Vacantrix Detection Stage">
+          <div class="apple-glass-reflection"></div>
+          <div class="apple-3d-hud-pill">
+            <span class="apple-live-indicator"></span>
+            <span>Live View • Parking Lot</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Themed Action Loader Modal -->
+  <div class="loader-overlay" id="loader">
+    <div class="loader-card">
+      <div class="spinner"></div>
+      <div id="loader-text">Loading...</div>
+    </div>
+  </div>
+
+  <script>
+    // Apple-Inspired Preloader Lifecycle
+    (function runPreloaderSession() {
+      const bar = document.getElementById('preloader-bar');
+      const status = document.getElementById('preloader-status');
+      const pct = document.getElementById('preloader-pct');
+      const preloader = document.getElementById('app-preloader');
+      if (!bar || !status || !pct || !preloader) return;
+
+      let currentPct = 0;
+      const targetDurationMs = 3000; // 3.0s smooth progression
+      const intervalMs = 35;
+      const totalTicks = targetDurationMs / intervalMs;
+      const stepIncrement = 100 / totalTicks;
+
+      const timer = setInterval(() => {
+        currentPct = Math.min(100, currentPct + stepIncrement);
+        const rounded = Math.floor(currentPct);
+        bar.style.width = currentPct.toFixed(1) + '%';
+        pct.textContent = rounded + '%';
+
+        if (currentPct >= 100) {
+          clearInterval(timer);
+          bar.style.width = '100%';
+          pct.textContent = '100%';
+          status.textContent = 'Ready';
+
+          setTimeout(() => {
+            preloader.classList.add('fade-out');
+            setTimeout(() => { preloader.style.display = 'none'; }, 650);
+          }, 350);
+        }
+      }, intervalMs);
+    })();
+
+    let appData = null;
+    let currentFeedView = 'annotated';
+    let sensitivity = 8;
+    let spotWidth = 94;
+    let spotHeight = 62;
+    let currentOrientation = 'horizontal';
+    let trendChartInstance = null;
+    let zoneBarInstance = null;
+    let donutInstance = null;
+
+    let videoPollingTimer = null;
+    let isVideoPlaying = true;
+    let lastOccupiedCount = null;
+    let simInterval = null;
+
+        
+    function toggleMobileSidebar(forceState) {
+      const sidebar = document.querySelector('.sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      if (!sidebar) return;
+      const isOpen = forceState !== undefined ? forceState : !sidebar.classList.contains('mobile-open');
+      if (isOpen) {
+        sidebar.classList.add('mobile-open');
+        if (backdrop) backdrop.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      } else {
+        sidebar.classList.remove('mobile-open');
+        if (backdrop) backdrop.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      
+      const navEl = document.getElementById(`nav-${tabId}`);
+      if (navEl) navEl.classList.add('active');
+      const tabEl = document.getElementById(`tab-${tabId}`);
+      if (tabEl) tabEl.classList.add('active');
+
+      const titles = {
+        'dashboard': 'Dashboard',
+        'live': 'Photo Detection',
+        'video': 'Live Video & CCTV Stream',
+        'zones': 'Parking Zones',
+        'analytics': 'Analytics',
+        'settings': 'Settings'
+      };
+      document.getElementById('current-tab-title').textContent = titles[tabId] || 'Dashboard';
+      if (window.innerWidth <= 900) toggleMobileSidebar(false);
+
+      if (tabId === 'video') {
+        startVideoStatsPolling();
+      } else {
+        stopVideoStatsPolling();
+      }
+
+      if (tabId === 'dashboard' && trendChartInstance) trendChartInstance.resize();
+      if (tabId === 'analytics') {
+        renderAnalyticsCharts();
+        if (typeof window.initParkingSimulation3D === 'function') {
+          setTimeout(() => window.initParkingSimulation3D('simulation-3d-canvas-wrap'), 80);
+        }
+      }
+    }
+
+function startVideoStatsPolling() {
+      if (videoPollingTimer) clearInterval(videoPollingTimer);
+      videoPollingTimer = setInterval(async () => {
+        try {
+          const res = await fetch('/api/video_status');
+          const data = await res.json();
+          if (data.status === 'success' && data.stats) {
+            updateVideoUI(data.stats);
+          }
+        } catch(e) {}
+      }, 900);
+    }
+
+    function stopVideoStatsPolling() {
+      if (videoPollingTimer) {
+        clearInterval(videoPollingTimer);
+        videoPollingTimer = null;
+      }
+    }
+
+    function updateVideoUI(stats) {
+      const fpsEl = document.getElementById('txt-video-fps');
+      if (fpsEl) fpsEl.textContent = `${stats.fps} FPS • LIVE`;
+      const totEl = document.getElementById('vstats-total');
+      if (totEl) totEl.textContent = stats.total;
+      const occEl = document.getElementById('vstats-occupied');
+      if (occEl) occEl.textContent = stats.occupied;
+      const vacEl = document.getElementById('vstats-vacant');
+      if (vacEl) vacEl.textContent = stats.vacant;
+      const rateEl = document.getElementById('vstats-rate');
+      if (rateEl) rateEl.textContent = `${Math.round(stats.rate)}%`;
+      const srcEl = document.getElementById('txt-video-source-label');
+      if (srcEl) srcEl.textContent = `Source: ${stats.source}`;
+
+      const bestEl = document.getElementById('vstats-best');
+      if (bestEl) {
+        if (stats.recommended_bay_id) {
+          bestEl.textContent = `Bay #${stats.recommended_bay_id} (Available • Closest)`;
+        } else {
+          bestEl.textContent = `Facility Full (0 Vacant)`;
+        }
+      }
+
+      if (lastOccupiedCount !== null && lastOccupiedCount !== stats.occupied) {
+        const delta = stats.occupied - lastOccupiedCount;
+        const timeStr = new Date().toLocaleTimeString();
+        const logBox = document.getElementById('vstats-log');
+        if (logBox) {
+          const entry = document.createElement('div');
+          if (delta > 0) {
+            entry.innerHTML = `<span style="color: #dc2626;">[${timeStr}]</span> +${delta} Vehicle parked`;
+          } else {
+            entry.innerHTML = `<span style="color: #16a34a;">[${timeStr}]</span> ${Math.abs(delta)} Bay freed up`;
+          }
+          logBox.prepend(entry);
+          playChime();
+        }
+      }
+      lastOccupiedCount = stats.occupied;
+    }
+
+    async function toggleVideoPlayback() {
+      const nextAction = isVideoPlaying ? 'pause' : 'play';
+      const res = await fetch('/api/video_control', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ action: nextAction })
+      });
+      const data = await res.json();
+      isVideoPlaying = data.is_playing;
+      document.getElementById('btn-video-play-pause').textContent = isVideoPlaying ? '⏸️ Pause Stream' : '▶️ Resume Stream';
+    }
+
+    async function restartVideoPlayback() {
+      await fetch('/api/video_control', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ action: 'restart' })
+      });
+      isVideoPlaying = true;
+      document.getElementById('btn-video-play-pause').textContent = '⏸️ Pause Stream';
+    }
+
+    async function onVideoSourceSelect(val) {
+      if (val === 'upload') {
+        document.getElementById('file-input-video').click();
+        return;
+      }
+      showLoader(true);
+      try {
+        await fetch('/api/set_video_source', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ type: val })
+        });
+        const img = document.getElementById('video-stream-img');
+        if (img) img.src = '/api/video_feed?t=' + Date.now();
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    async function onVideoUpload(e) {
+      if (!e.target.files.length) return;
+      const file = e.target.files[0];
+      const formData = new FormData();
+      formData.append('video', file);
+      showLoader(true);
+      try {
+        await fetch('/api/upload_video', {
+          method: 'POST',
+          body: formData
+        });
+        const img = document.getElementById('video-stream-img');
+        if (img) img.src = '/api/video_feed?t=' + Date.now();
+        document.getElementById('video-source-select').value = 'upload';
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    async function autoMapOnVideoFrame() {
+      showLoader(true);
+      try {
+        await fetch('/api/sync_video_frame', { method: 'POST' });
+        const res = await fetch('/api/auto_detect_spaces', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'success') {
+          updateUI(data);
+          alert('Bays successfully mapped to current video frame!');
+        }
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    function toggleSimulationStream() {
+      const btn = document.getElementById('btn-sim-stream');
+      if (simInterval) {
+        clearInterval(simInterval);
+        simInterval = null;
+        btn.textContent = '🔴 Live Pulse';
+        btn.style.background = '';
+        btn.style.color = '#059669';
+      } else {
+        btn.textContent = '🟢 Simulating (Click to Stop)';
+        btn.style.background = '#dcfce7';
+        btn.style.color = '#15803d';
+        simInterval = setInterval(async () => {
+          try {
+            const res = await fetch('/api/simulate_step', { method: 'POST' });
+            const data = await res.json();
+            if (data.status === 'success') {
+              updateUI(data);
+              playChime();
+            }
+          } catch(e) {}
+        }, 3000);
+      }
+    }
+
+    function playChime() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.06);
+        gain.gain.setValueAtTime(0.03, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.13);
+      } catch (e) {}
+    }
+
+    function showLoader(show) {
+      document.getElementById('loader').style.display = show ? 'flex' : 'none';
+    }
+
+    function onFileChange(e) {
+      if (e.target.files.length > 0) uploadFile(e.target.files[0]);
+    }
+
+    async function uploadFile(file) {
+      showLoader(true);
+      const fd = new FormData();
+      fd.append('image', file);
+      fd.append('sensitivity', sensitivity);
+      fd.append('spot_w', spotWidth);
+      fd.append('spot_h', spotHeight);
+
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.status === 'success') {
+          updateUI(data);
+        } else {
+          alert('Upload failed: ' + (data.message || 'Error'));
+        }
+      } catch (err) {
+        alert('Network error.');
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    async function loadSamplePreset(presetType, silent = false) {
+      if (!silent) showLoader(true);
+      try {
+        const res = await fetch('/api/load_sample', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ type: presetType, sensitivity })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          updateUI(data);
+          if (!silent) {
+            showToast(`Switched to ${presetType === 'aerial' ? 'Drone View' : 'Mall Lot'} Preset`, 'success');
+          }
+        }
+      } catch (err) {
+        console.warn('Preset load handled gracefully:', err);
+      } finally {
+        if (!silent) showLoader(false);
+      }
+    }
+
+    async function autoDetectSpaces() {
+      showLoader(true);
+      try {
+        const res = await fetch('/api/auto_detect_spaces', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'success') {
+          updateUI(data);
+        }
+      } catch (e) {
+        alert('Auto-detection error.');
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    async function toggleOrientation() {
+      const nextOrient = currentOrientation === 'horizontal' ? 'vertical' : 'horizontal';
+      showLoader(true);
+      try {
+        const res = await fetch('/api/set_orientation', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ orientation: nextOrient })
+        });
+        const data = await res.json();
+        if (data.status === 'success') updateUI(data);
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    function animateCounter(el, targetVal, prefix = '', suffix = '', decimals = 0, duration = 650) {
+      if (!el) return;
+      const startVal = parseFloat(el.getAttribute('data-raw') || '0') || 0;
+      el.setAttribute('data-raw', targetVal);
+      const startTime = performance.now();
+      function step(now) {
+        const p = Math.min((now - startTime) / duration, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        const curr = startVal + (targetVal - startVal) * ease;
+        el.textContent = `${prefix}${curr.toFixed(decimals)}${suffix}`;
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    function typeReveal(el, text, speed = 16) {
+      if (!el) return;
+      clearInterval(el._typeTimer);
+      el.textContent = '';
+      let idx = 0;
+      el._typeTimer = setInterval(() => {
+        if (idx < text.length) {
+          el.textContent += text.charAt(idx++);
+        } else {
+          clearInterval(el._typeTimer);
+        }
+      }, speed);
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = 'toast-msg';
+      const icon = type === 'success' ? '✓' : 'ℹ';
+      toast.innerHTML = `<span style="color: #38bdf8; font-weight: 700;">${icon}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('hide');
+        setTimeout(() => toast.remove(), 300);
+      }, 2600);
+    }
+
+    function updateUI(data) {
+      appData = data;
+      currentOrientation = data.orientation || 'horizontal';
+
+      // Orientation button
+      const orientBtn = document.getElementById('btn-orient-toggle');
+      if (orientBtn) {
+        orientBtn.textContent = currentOrientation === 'horizontal' ? '🔄 Vertical Bays' : '🔄 Horizontal Bays';
+      }
+      const setOrientEl = document.getElementById('settings-orientation');
+      if (setOrientEl) setOrientEl.textContent = currentOrientation.toUpperCase();
+
+      // Interactive KPI Number Odometers
+      animateCounter(document.getElementById('dash-total'), data.summary.total_slots);
+      animateCounter(document.getElementById('dash-occupied'), data.summary.occupied_slots);
+      animateCounter(document.getElementById('dash-vacant'), data.summary.vacant_slots);
+      animateCounter(document.getElementById('dash-rate'), data.summary.occupancy_rate, '', '%', 1);
+      
+      const circEl = document.getElementById('dash-circle-rate');
+      if (circEl) animateCounter(circEl, data.summary.occupancy_rate, '', '%', 0);
+
+      if (data.billing) {
+        const revEl = document.getElementById('dash-revenue');
+        if (revEl) animateCounter(revEl, data.billing.total_revenue, data.billing.currency || '$', '', 2);
+        const overstayEl = document.getElementById('dash-overstay');
+        if (overstayEl) {
+          if (data.billing.overstay_alerts > 0) {
+            overstayEl.textContent = `⚠️ ${data.billing.overstay_alerts} Overstay (>2h)`;
+            overstayEl.style.color = '#dc2626';
+          } else {
+            overstayEl.textContent = `Avg Duration: ${data.billing.avg_stay_mins}m`;
+            overstayEl.style.color = '#059669';
+          }
+        }
+      }
+
+      // Type-Reveal effect on Optimal Free Bay
+      const recEl = document.getElementById('txt-recommended');
+      if (recEl) {
+        const recText = data.recommended_bay_id 
+          ? `Optimal Parking Space: #${data.recommended_bay_id} (Vacant • Closest to Entrance)` 
+          : `Facility Full: All bays currently occupied`;
+        typeReveal(recEl, recText, 14);
+      }
+
+      // Settings tab
+      const setImg = document.getElementById('settings-img-name');
+      if (setImg) setImg.textContent = data.image_name;
+
+      // Sliders
+      spotWidth = data.spot_w || spotWidth;
+      spotHeight = data.spot_h || spotHeight;
+      const sWidth = document.getElementById('slider-width');
+      if (sWidth) sWidth.value = spotWidth;
+      const tWidth = document.getElementById('txt-width');
+      if (tWidth) tWidth.textContent = `${spotWidth} px`;
+      const sHeight = document.getElementById('slider-height');
+      if (sHeight) sHeight.value = spotHeight;
+      const tHeight = document.getElementById('txt-height');
+      if (tHeight) tHeight.textContent = `${spotHeight} px`;
+
+      // Images
+      refreshLiveFeed();
+      const btnDl = document.getElementById('btn-download-live');
+      if (btnDl) btnDl.href = data.annotated_image;
+
+      // Staggered interactive parking map
+      renderParkingMap(data.slots, data.recommended_bay_id);
+
+      // Recent Detections
+      renderRecentDetections(data.recent_detections);
+
+      // Zones
+      renderZones(data.zones);
+
+      // Trend Chart
+      renderTrendChart(data.hourly_trend);
+
+      // Analytics
+      renderAnalyticsCharts();
+    }
+
+    function refreshLiveFeed() {
+      if (!appData) return;
+      const feed = document.getElementById('live-img');
+      if (currentFeedView === 'annotated') feed.src = appData.annotated_image;
+      else if (currentFeedView === 'edge') feed.src = appData.edge_mask;
+      else if (currentFeedView === 'heatmap') feed.src = appData.heatmap_image;
+      else if (currentFeedView === 'nav') feed.src = appData.nav_image;
+      else feed.src = appData.raw_image;
+    }
+
+    function setFeedView(v) {
+      currentFeedView = v;
+      ['annotated', 'edge', 'heatmap', 'nav', 'raw'].forEach(name => {
+        const btn = document.getElementById(`btn-mode-${name}`);
+        if (btn) {
+          if (name === v) btn.classList.add('btn-primary-action');
+          else btn.classList.remove('btn-primary-action');
+        }
+      });
+      refreshLiveFeed();
+    }
+
+    async function onSlotClick(slot) {
+      const choice = prompt(`Bay #${slot.id} (${slot.category || 'Regular'} • ${slot.is_occupied ? 'Occupied' : (slot.is_reserved ? 'Reserved' : 'Vacant')})\n\nSelect an action:\n1: Toggle Reservation 🔒\n2: Set EV Charging ⚡\n3: Set Handicap ♿\n4: Set Regular`, "1");
+      if (choice === "1") {
+        await postAction('/api/toggle_reservation', { slot_id: slot.id });
+      } else if (choice === "2") {
+        await postAction('/api/set_category', { slot_id: slot.id, category: "EV Charging ⚡" });
+      } else if (choice === "3") {
+        await postAction('/api/set_category', { slot_id: slot.id, category: "Handicap ♿" });
+      } else if (choice === "4") {
+        await postAction('/api/set_category', { slot_id: slot.id, category: "Regular" });
+      }
+    }
+
+    function showSlotTooltip(e, slot) {
+      const tip = document.getElementById('slot-hover-tooltip');
+      if (!tip) return;
+      const isRec = appData && (slot.id === appData.recommended_bay_id);
+      let statusBadge = slot.is_occupied 
+        ? '<span style="color: #f43f5e; font-weight: 700;">● OCCUPIED</span>' 
+        : (isRec ? '<span style="color: #fbbf24; font-weight: 700;">★ OPTIMAL FREE</span>' : '<span style="color: #34d399; font-weight: 700;">● VACANT</span>');
+      
+      let details = slot.vehicle && slot.vehicle !== '—' ? `• ${slot.vehicle} (${slot.color || ''})` : '';
+      tip.innerHTML = `<b>Bay #${slot.id}</b> ${statusBadge} <span style="color: #94a3b8;">${slot.category || 'Regular'} ${details}</span>`;
+      tip.style.left = `${e.clientX}px`;
+      tip.style.top = `${e.clientY}px`;
+      tip.classList.add('visible');
+
+      // Cross-highlight corresponding table row
+      const rows = document.querySelectorAll('#recent-tbody tr');
+      rows.forEach(r => {
+        if (r.getAttribute('data-slot') == slot.id) {
+          r.style.background = '#e2e8f0';
+        }
+      });
+    }
+
+    function hideSlotTooltip(slot) {
+      const tip = document.getElementById('slot-hover-tooltip');
+      if (tip) tip.classList.remove('visible');
+      const rows = document.querySelectorAll('#recent-tbody tr');
+      rows.forEach(r => {
+        r.style.background = '';
+      });
+    }
+
+    function highlightSlotFromRow(slotId, highlight) {
+      if (!slotId) return;
+      const numId = parseInt(String(slotId).replace(/\D/g, ''), 10);
+      const slotEl = document.querySelector(`.map-slot[data-slot-id="${numId}"]`) || document.querySelector(`.map-slot[data-slot-id="${slotId}"]`);
+      if (slotEl) {
+        if (highlight) {
+          slotEl.classList.add('row-highlight');
+        } else {
+          slotEl.classList.remove('row-highlight');
+        }
+      }
+    }
+
+    function renderParkingMap(slots, recommendedId) {
+      const container = document.getElementById('parking-map-grid');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const rowSize = Math.max(8, Math.ceil(slots.length / 3));
+      let currentRow = document.createElement('div');
+      currentRow.className = 'map-row';
+
+      slots.forEach((s, idx) => {
+        if (idx > 0 && idx % rowSize === 0) {
+          container.appendChild(currentRow);
+          currentRow = document.createElement('div');
+          currentRow.className = 'map-row';
+        }
+        const el = document.createElement('div');
+        const isRec = (s.id === recommendedId);
+        let cls = s.is_occupied ? 'slot-occ' : 'slot-vac';
+        if (isRec) cls = 'slot-rec';
+        el.className = `map-slot ${cls}`;
+        el.setAttribute('data-slot-id', s.id);
+        el.textContent = s.id;
+        el.style.animation = `slotPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) backwards`;
+        el.style.animationDelay = `${Math.min(idx * 15, 450)}ms`;
+        
+        // Creative Hover Listeners
+        el.onmouseenter = (e) => showSlotTooltip(e, s);
+        el.onmousemove = (e) => {
+          const tip = document.getElementById('slot-hover-tooltip');
+          if (tip) {
+            tip.style.left = `${e.clientX}px`;
+            tip.style.top = `${e.clientY}px`;
+          }
+        };
+        el.onmouseleave = () => hideSlotTooltip(s);
+        el.onclick = () => onSlotClick(s);
+        currentRow.appendChild(el);
+      });
+      container.appendChild(currentRow);
+    }
+
+    function renderRecentDetections(detections) {
+      const tbody = document.getElementById('recent-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (!detections) return;
+
+      detections.forEach(d => {
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-slot', d.slot_id);
+        const badgeClass = d.status === 'Occupied' ? 'badge-occ' : (d.status === 'Reserved' ? 'badge-occ' : 'badge-vac');
+        tr.innerHTML = `
+          <td><span style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-muted);">${d.time}</span></td>
+          <td><b>#${d.slot_id}</b></td>
+          <td><span style="font-size: 0.78rem; font-weight: 600;">${d.category || 'Regular'}</span></td>
+          <td><span class="badge ${badgeClass}">${d.status}</span></td>
+          <td><span style="font-weight: 600;">${d.vehicle}</span></td>
+          <td><span style="font-size: 0.78rem; color: #475569;">${d.duration || '—'}</span></td>
+          <td><b>${d.fee || '—'}</b></td>
+          <td style="font-family: 'JetBrains Mono', monospace;">${d.confidence}</td>
+          <td><code class="selectable" style="font-size: 0.78rem;">${d.license_plate}</code></td>
+          <td>${d.lot}</td>
+        `;
+
+        // Cross highlight the map stall when table row is hovered!
+        tr.onmouseenter = () => highlightSlotFromRow(d.slot_id, true);
+        tr.onmouseleave = () => highlightSlotFromRow(d.slot_id, false);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderZones(zones) {
+      if (!zones) return;
+      const kpiRow = document.getElementById('zones-kpi-row');
+      const tbody = document.getElementById('zones-tbody');
+      kpiRow.innerHTML = '';
+      tbody.innerHTML = '';
+
+      zones.forEach(z => {
+        const card = document.createElement('div');
+        card.className = 'kpi-card';
+        card.innerHTML = `
+          <div class="kpi-info">
+            <span class="kpi-title">${z.name}</span>
+            <span class="kpi-value">${z.rate}%</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">${z.occupied} of ${z.total} occupied</span>
+          </div>
+          <div class="kpi-icon-pill icon-blue">🅿️</div>
+        `;
+        kpiRow.appendChild(card);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><b>${z.name}</b></td>
+          <td>${z.total}</td>
+          <td><span style="color: var(--accent-red); font-weight: 600;">${z.occupied}</span></td>
+          <td><span style="color: var(--accent-green); font-weight: 600;">${z.vacant}</span></td>
+          <td><b>${z.rate}%</b></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderTrendChart(trendData) {
+      if (!trendData || typeof Chart === 'undefined') return;
+      const ctx = document.getElementById('trendChart').getContext('2d');
+
+      if (trendChartInstance) trendChartInstance.destroy();
+
+      trendChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: trendData.labels,
+          datasets: [
+            {
+              label: 'Occupied',
+              data: trendData.occupied,
+              borderColor: '#2563eb',
+              backgroundColor: 'rgba(37, 99, 235, 0.08)',
+              fill: true,
+              tension: 0.35,
+              borderWidth: 2.5,
+              pointRadius: 3
+            },
+            {
+              label: 'Vacant',
+              data: trendData.vacant,
+              borderColor: '#06b6d4',
+              backgroundColor: 'rgba(6, 182, 212, 0.08)',
+              fill: true,
+              tension: 0.35,
+              borderWidth: 2.5,
+              pointRadius: 3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } },
+            y: { grid: { color: '#f1f5f9' }, ticks: { color: '#94a3b8', font: { size: 11 } } }
+          }
+        }
+      });
+    }
+
+    function renderAnalyticsCharts() {
+      if (!appData || typeof Chart === 'undefined') return;
+
+      const ctxBar = document.getElementById('zoneBarChart').getContext('2d');
+      if (zoneBarInstance) zoneBarInstance.destroy();
+
+      const zoneLabels = appData.zones ? appData.zones.map(z => z.name) : ['Zone A', 'Zone B', 'Zone C', 'Zone D'];
+      const zoneRates = appData.zones ? appData.zones.map(z => z.rate) : [75, 60, 85, 45];
+
+      zoneBarInstance = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+          labels: zoneLabels,
+          datasets: [{
+            data: zoneRates,
+            backgroundColor: '#0284c7',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false } },
+            y: { max: 100, ticks: { callback: v => v + '%' } }
+          }
+        }
+      });
+
+      const ctxDonut = document.getElementById('donutChart').getContext('2d');
+      if (donutInstance) donutInstance.destroy();
+
+      donutInstance = new Chart(ctxDonut, {
+        type: 'doughnut',
+        data: {
+          labels: ['Occupied', 'Vacant'],
+          datasets: [{
+            data: [appData.summary.occupied_slots, appData.summary.vacant_slots],
+            backgroundColor: ['#2563eb', '#10b981'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '72%',
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    }
+
+    async function onImageClick(e) {
+      const img = e.target;
+      const rect = img.getBoundingClientRect();
+      const sx = img.naturalWidth / rect.width;
+      const sy = img.naturalHeight / rect.height;
+      const x = Math.round((e.clientX - rect.left) * sx);
+      const y = Math.round((e.clientY - rect.top) * sy);
+
+      await postAction('/api/add_spot', { x, y, w: spotWidth, h: spotHeight, sensitivity });
+    }
+
+    async function onImageRightClick(e) {
+      e.preventDefault();
+      const img = e.target;
+      const rect = img.getBoundingClientRect();
+      const sx = img.naturalWidth / rect.width;
+      const sy = img.naturalHeight / rect.height;
+      const x = Math.round((e.clientX - rect.left) * sx);
+      const y = Math.round((e.clientY - rect.top) * sy);
+
+      await postAction('/api/delete_spot', { x, y, sensitivity });
+    }
+
+    let timer = null;
+    function onSensitivityChange(val) {
+      sensitivity = parseInt(val);
+      document.getElementById('txt-sensitivity').textContent = `${val}%`;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        postAction('/api/reanalyze', { sensitivity });
+      }, 140);
+    }
+
+    function onWidthChange(val) {
+      spotWidth = parseInt(val);
+      document.getElementById('txt-width').textContent = `${val} px`;
+    }
+
+    function onHeightChange(val) {
+      spotHeight = parseInt(val);
+      document.getElementById('txt-height').textContent = `${val} px`;
+    }
+
+    async function postAction(url, body) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (data.status === 'success') updateUI(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function autoGenerateGrid() {
+      await postAction('/api/auto_grid', { w: spotWidth, h: spotHeight, sensitivity });
+    }
+
+    async function reloadSavedSpots() {
+      await postAction('/api/reload_spots', { sensitivity });
+    }
+
+    async function clearAllSpots() {
+      if (confirm('Clear all bays?')) {
+        await postAction('/api/clear_spots', { sensitivity });
+      }
+    }
+
+    async function saveGeneralSettings() {
+      const cfg = {
+        lotName: document.getElementById('cfg-lot-name')?.value || 'Smart Vacantrix • Lot A Main',
+        opHours: document.getElementById('cfg-op-hours')?.value || '24/7',
+        rate: document.getElementById('cfg-rate')?.value || '3.50',
+        grace: document.getElementById('cfg-grace')?.value || '15',
+        cameraSource: document.getElementById('cfg-camera-source')?.value || 'live',
+        nightMode: document.getElementById('cfg-night-mode')?.checked ?? true,
+        autoReconnect: document.getElementById('cfg-auto-reconnect')?.checked ?? true,
+        alertFull: document.getElementById('cfg-alert-full')?.checked ?? true,
+        guideNearest: document.getElementById('cfg-guide-nearest')?.checked ?? true,
+        signSync: document.getElementById('cfg-sign-sync')?.checked ?? true
+      };
+
+      try {
+        localStorage.setItem('smart_vacantrix_cfg', JSON.stringify(cfg));
+      } catch (e) {}
+
+      showToast('General settings saved successfully!', 'success');
+    }
+
+    function loadGeneralSettings() {
+      try {
+        const raw = localStorage.getItem('smart_vacantrix_cfg');
+        if (!raw) return;
+        const cfg = JSON.parse(raw);
+        if (cfg.lotName && document.getElementById('cfg-lot-name')) document.getElementById('cfg-lot-name').value = cfg.lotName;
+        if (cfg.opHours && document.getElementById('cfg-op-hours')) document.getElementById('cfg-op-hours').value = cfg.opHours;
+        if (cfg.rate && document.getElementById('cfg-rate')) document.getElementById('cfg-rate').value = cfg.rate;
+        if (cfg.grace && document.getElementById('cfg-grace')) document.getElementById('cfg-grace').value = cfg.grace;
+        if (cfg.cameraSource && document.getElementById('cfg-camera-source')) document.getElementById('cfg-camera-source').value = cfg.cameraSource;
+        if (typeof cfg.nightMode === 'boolean' && document.getElementById('cfg-night-mode')) document.getElementById('cfg-night-mode').checked = cfg.nightMode;
+        if (typeof cfg.autoReconnect === 'boolean' && document.getElementById('cfg-auto-reconnect')) document.getElementById('cfg-auto-reconnect').checked = cfg.autoReconnect;
+        if (typeof cfg.alertFull === 'boolean' && document.getElementById('cfg-alert-full')) document.getElementById('cfg-alert-full').checked = cfg.alertFull;
+        if (typeof cfg.guideNearest === 'boolean' && document.getElementById('cfg-guide-nearest')) document.getElementById('cfg-guide-nearest').checked = cfg.guideNearest;
+        if (typeof cfg.signSync === 'boolean' && document.getElementById('cfg-sign-sync')) document.getElementById('cfg-sign-sync').checked = cfg.signSync;
+      } catch (e) {}
+    }
+
+    function syncVideoSource(val) {
+      const vSelect = document.getElementById('video-source-select');
+      if (vSelect) {
+        vSelect.value = val;
+        onVideoSourceSelect(val);
+      }
+    }
+
+    async function saveSpots() {
+      try {
+        const res = await fetch('/api/save_spots', { method: 'POST' });
+        const data = await res.json();
+        showToast(data.message || 'Saved layout successfully.', 'success');
+      } catch (e) {
+        showToast('Save failed.', 'error');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSamplePreset('perspective', true);
+      loadGeneralSettings();
+    });
+  </script>
+<div id="toast-container"></div>
+<div id="slot-hover-tooltip"></div>
+</body>
+</html>

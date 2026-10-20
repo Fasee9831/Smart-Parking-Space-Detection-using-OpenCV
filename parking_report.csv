@@ -1,0 +1,25 @@
+Slot ID,Type,Status,Vehicle,Confidence,Edge Density,Duration,Accrued Fee,Violations
+A-01,Regular,Occupied,car,96%,37%,0m 0s,$0.00,None
+A-02,Regular,Occupied,car,92%,32%,0m 0s,$0.00,None
+A-03,Regular,Occupied,car,89%,18%,0m 0s,$0.00,None
+A-04,EV Charging,Occupied,car,79%,15%,0m 0s,$0.00,None
+A-05,Handicap,Occupied,truck,53%,20%,0m 0s,$0.00,None
+A-06,Regular,Occupied,car,70%,23%,0m 0s,$0.00,None
+A-07,Regular,Occupied,car,70%,15%,0m 0s,$0.00,None
+B-01,Regular,Occupied,car,63%,40%,0m 0s,$0.00,None
+B-02,Regular,Occupied,car,96%,56%,0m 0s,$0.00,None
+B-03,EV Charging,Occupied,vehicle,95%,15%,0m 0s,$0.00,None
+B-04,Regular,Vacant,-,0%,9%,-,-,None
+B-05,Regular,Occupied,car,94%,34%,0m 0s,$0.00,None
+B-06,VIP / Reserved,Occupied,car,73%,32%,0m 0s,$0.00,None
+B-07,Regular,Occupied,car,89%,52%,0m 0s,$0.00,None
+B-08,Regular,Occupied,car,92%,34%,0m 0s,$0.00,None
+B-09,Regular,Occupied,car,94%,20%,0m 0s,$0.00,None
+C-01,Regular,Occupied,car,54%,53%,0m 0s,$0.00,None
+C-02,Regular,Occupied,vehicle,95%,59%,0m 0s,$0.00,None
+C-03,Regular,Occupied,car,74%,58%,0m 0s,$0.00,None
+C-04,Handicap,Occupied,vehicle,95%,60%,0m 0s,$0.00,None
+C-05,Regular,Vacant,-,56%,3%,-,-,None
+C-06,Regular,Occupied,vehicle,95%,53%,0m 0s,$0.00,None
+C-07,Regular,Occupied,vehicle,95%,21%,0m 0s,$0.00,None
+C-08,VIP / Reserved,Vacant,-,0%,10%,-,-,None
