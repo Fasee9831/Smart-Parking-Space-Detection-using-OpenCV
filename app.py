@@ -1,5 +1,5 @@
 """
-ParkSense AI - End-to-End Smart Parking Space Occupancy & Facility Management System
+Smart Vacantrix - End-to-End Smart Parking Space Occupancy & Facility Management System
 Built with Streamlit, OpenCV, and PyTorch.
 """
 
@@ -29,7 +29,7 @@ from core.stream_simulator import StreamSimulator
 
 # --- Page Configuration ---
 st.set_page_config(
-    page_title="ParkSense AI - Smart Parking System",
+    page_title="Smart Vacantrix - Smart Parking System",
     page_icon="🅿️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -251,7 +251,7 @@ with st.sidebar:
     tracker.max_stay_hours = st.slider("Max Stay Limit (Hrs)", 1.0, 12.0, 4.0, 0.5)
 
     st.markdown("---")
-    st.caption("ParkSense AI Platform v2.0 • End-to-End Edition")
+    st.caption("Smart Vacantrix Platform v2.0 • End-to-End Edition")
 
 
 # --- Detector Instance ---
@@ -312,7 +312,7 @@ summary = ParkingAnalytics.compute_summary(sm.slots, detection_results, tracker)
 st.markdown(f"""
 <div class="header-banner">
     <div>
-        <h1 class="header-title">🅿️ ParkSense AI Facility Monitor</h1>
+        <h1 class="header-title">🅿️ Smart Vacantrix Facility Monitor</h1>
         <p class="header-subtitle">Real-time Vision Occupancy Detection, Automated Billing & Enforcement</p>
     </div>
     <div style="text-align: right;">
@@ -426,7 +426,7 @@ with tab_surv:
 
         if view_option == "Annotated Overlay":
             rgb_display = cv2.cvtColor(rendered_frame, cv2.COLOR_BGR2RGB)
-            st.image(rgb_display, use_container_width=True, caption=f"ParkSense AI Live Vision Overlay ({fps:.1f} FPS)")
+            st.image(rgb_display, use_container_width=True, caption=f"Smart Vacantrix Live Vision Overlay ({fps:.1f} FPS)")
         elif view_option == "Raw Camera Feed":
             rgb_display = cv2.cvtColor(current_frame, cv2.COLOR_BGR2RGB)
             st.image(rgb_display, use_container_width=True, caption="Raw Surveillance Stream")
@@ -782,10 +782,10 @@ with tab_billing:
 # =========================================================================
 with tab_api:
     st.subheader("🔌 External API Integration")
-    st.caption("Integrate ParkSense AI with digital street signs, barrier gates, mobile apps, and municipal parking networks.")
+    st.caption("Integrate Smart Vacantrix with digital street signs, barrier gates, mobile apps, and municipal parking networks.")
 
     st.markdown("""
-    ParkSense AI provides a lightweight REST API server located at `api.py`.
+    Smart Vacantrix provides a lightweight REST API server located at `api.py`.
     
     #### Start the REST API:
     ```bash

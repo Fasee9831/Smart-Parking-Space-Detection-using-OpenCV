@@ -1,5 +1,5 @@
 """
-ParkSense AI - REST API Microservice.
+Smart Vacantrix - REST API Microservice.
 Provides HTTP JSON endpoints for integration with mobile apps, gate barriers, and smart city dashboards.
 """
 
@@ -132,10 +132,10 @@ def add_or_update_slot():
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="ParkSense AI REST API Server")
+    parser = argparse.ArgumentParser(description="Smart Vacantrix REST API Server")
     parser.add_argument("--port", type=int, default=5000, help="Port to listen on")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host interface")
     args = parser.parse_args()
 
-    print(f"\n🚀 ParkSense AI REST API running at http://{args.host}:{args.port}")
+    print(f"\n🚀 Smart Vacantrix REST API running at http://{args.host}:{args.port}")
     app.run(host=args.host, port=args.port, debug=False)

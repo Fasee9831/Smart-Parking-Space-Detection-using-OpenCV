@@ -1,5 +1,5 @@
 """
-Smart Parking Space Occupancy Detection System
+Smart Vacantrix - Parking Space Occupancy Detection System
 Pure Python & OpenCV Application (Zero Heavy Dependencies)
 
 Features:

@@ -1,5 +1,5 @@
 """
-ParkSense AI - Command Line Interface (CLI).
+Smart Vacantrix - Command Line Interface (CLI).
 Enables headless batch processing, automated report generation, and exports.
 """
 
@@ -22,7 +22,7 @@ from core.visualizer import ParkingVisualizer
 
 
 def run_cli():
-    parser = argparse.ArgumentParser(description="ParkSense AI Command Line Facility Inspector")
+    parser = argparse.ArgumentParser(description="Smart Vacantrix Command Line Facility Inspector")
     parser.add_argument("--source", type=str, default="parking_lot.png", help="Path to input image or video")
     parser.add_argument("--slots", type=str, default=None, help="Path to custom parking slots JSON")
     parser.add_argument("--output", type=str, default="output_annotated.png", help="Path to save annotated image")
@@ -32,7 +32,7 @@ def run_cli():
     args = parser.parse_args()
 
     print("\n=======================================================")
-    print("        ParkSense AI - Batch Vision Inspector          ")
+    print("        Smart Vacantrix - Batch Vision Inspector          ")
     print("=======================================================")
 
     slot_manager = SlotManager(default_file=args.slots)
