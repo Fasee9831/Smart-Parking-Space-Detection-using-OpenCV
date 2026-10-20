@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "web_app.py",
+      "src": "api/index.py",
       "use": "@vercel/python"
     }
   ],
@@ -13,7 +13,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "web_app.py"
+      "dest": "api/index.py"
     }
   ]
 }
