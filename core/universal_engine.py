@@ -298,22 +298,22 @@ class UniversalParkingEngine:
                 conf = max(80, int(100 - std_dev * 1.5))
         else:
             # Perspective / CCTV lot:
-            # 1. Car verified via Faster R-CNN (overlap >= 32% prevents grazing adjacent parked cars)
-            if best_veh is not None and max_overlap >= 0.32:
+            # 1. Car verified via Faster R-CNN (overlap >= 18%)
+            if best_veh is not None and max_overlap >= 0.18:
                 is_occ = True
-                conf = int(best_veh["score"] * 100)
-                vtype = best_veh["type"]
+                conf = int(best_veh.get("score", 0.92) * 100)
+                vtype = best_veh.get("type", "car")
                 vcolor = UniversalParkingEngine.detect_vehicle_color(roi_bgr)
-            # 2. Distant perspective car (high edge density >= 14% AND high texture std >= 38.0)
-            elif edge_pct >= 14 and std_dev >= 38.0:
+            # 2. Distant or un-boxed vehicle (high texture variance std >= 25.0 or edge density >= 8%)
+            elif std_dev >= 25.0 or edge_pct >= 8:
                 is_occ = True
-                conf = min(92, int(edge_pct * 2.5 + std_dev * 0.6))
+                conf = min(95, int(edge_pct * 2.5 + std_dev * 0.8))
                 vtype = "car"
                 vcolor = UniversalParkingEngine.detect_vehicle_color(roi_bgr)
             else:
                 # Flat pavement or empty parking space
                 is_occ = False
-                conf = max(82, int(100 - edge_pct * 3))
+                conf = max(88, int(100 - std_dev * 1.5))
                 vtype = None
                 vcolor = None
 
